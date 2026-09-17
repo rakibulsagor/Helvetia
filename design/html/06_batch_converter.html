@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-container":"#201f1e","secondary-fixed-dim":"#c9c6c4","error-container":"#93000a","primary":"#ffb868","surface-dim":"#141312","on-primary-fixed-variant":"#673d00","inverse-on-surface":"#31302f","on-primary-fixed":"#2b1700","background":"#141312","surface-bright":"#3a3938","surface-tint":"#ffb868","outline":"#9e8e7f","surface-container-lowest":"#0f0e0d","on-tertiary-fixed-variant":"#00522f","outline-variant":"#514438","secondary":"#c9c6c4","on-surface-variant":"#d6c3b3","on-secondary-fixed-variant":"#484645","on-secondary-container":"#bbb8b6","primary-fixed-dim":"#ffb868","surface-variant":"#363433","secondary-container":"#4a4948","on-error":"#690005","on-tertiary":"#00391f","surface-container-highest":"#363433","on-secondary":"#31302f","surface-container-low":"#1c1b1a","on-tertiary-container":"#00371e","tertiary-container":"#44a971","on-background":"#e6e2df","on-error-container":"#ffdad6","inverse-primary":"#875205","primary-container":"#c98a3e","primary-fixed":"#ffddbb","on-primary-container":"#472900","error":"#ffb4ab","on-surface":"#e6e2df","tertiary":"#77da9e","inverse-surface":"#e6e2df","tertiary-fixed-dim":"#77da9e","surface":"#141312","surface-container-high":"#2b2a29","secondary-fixed":"#e5e2e0","tertiary-fixed":"#93f7b8","on-primary":"#482900","on-tertiary-fixed":"#002110","on-secondary-fixed":"#1c1b1b"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-lg":"1rem","margin":"1rem","space-md":"0.75rem","gutter-dense":"0.5rem","margin-window":"0.75rem","space-xl":"1.5rem","gutter":"1rem","space-sm":"0.5rem","space-xs":"0.25rem"},fontFamily:{"code-md":["JetBrains Mono"],"label-sm":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"headline-md":["Inter"],"body-lg":["Inter"],"code-sm":["JetBrains Mono"],"body-sm":["Inter"],"headline-sm":["Inter"],"headline-lg":["Inter"]},fontSize:{"code-md":["0.8125rem",{"lineHeight":"1.25rem","letterSpacing":"-0.01em","fontWeight":"400"}],"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.04em","fontWeight":"600"}],"label-md":["0.75rem",{"lineHeight":"1rem","letterSpacing":"0.02em","fontWeight":"500"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","letterSpacing":"0","fontWeight":"400"}],"headline-md":["1.25rem",{"lineHeight":"1.75rem","letterSpacing":"-0.015em","fontWeight":"600"}],"body-lg":["0.9375rem",{"lineHeight":"1.375rem","letterSpacing":"0","fontWeight":"400"}],"code-sm":["0.75rem",{"lineHeight":"1.125rem","letterSpacing":"0","fontWeight":"400"}],"body-sm":["0.8125rem",{"lineHeight":"1.125rem","letterSpacing":"0.005em","fontWeight":"400"}],"headline-sm":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased select-none"><header class="fixed top-0 left-0 right-0 h-12 z-50 bg-surface-container-high border-b border-outline-variant/30 flex items-center justify-between px-space-md shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-error hover:opacity-80 transition-opacity cursor-pointer"></div><div class="w-3 h-3 rounded-full bg-secondary-container hover:opacity-80 transition-opacity cursor-pointer"></div><div class="w-3 h-3 rounded-full bg-surface-bright hover:opacity-80 transition-opacity cursor-pointer"></div></div><div class="h-4 w-px bg-outline-variant/40 ml-1"></div><div class="flex items-center gap-space-sm pl-1"><img alt="Anvil Brand Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XA0Pg0y0-msyiXG0ZTRQVYHUxhjrhPMaQN9SJbs32bAZUYrlNBWsXM62H1KZdm5779i9r6ZGTZSGBteeZ1E28qiE1PbejsrU3ruIrVImvyEfzJUopPVMyfULscPrvbvpgj4BYq-Z-kH1qS_3DRFlczRUbmGBy9I0WGfMoSRp3ySfjHctBlNO5FVou46nMHgAXM3XzWxkhvUH-RI9vmIKGC0CERyaAsIi6FlMk1Y2kr5QwGBDHyG7ey8Cnt"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Anvil</span><span class="text-outline-variant font-code-sm text-code-sm">›</span><span class="font-label-md text-label-md text-on-surface-variant font-medium">Utilities</span></div></div><div class="hidden md:flex items-center gap-space-sm"><button class="flex items-center gap-1.5 px-space-md py-1 rounded bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors border border-outline-variant/20" type="button"><span class="material-symbols-outlined text-[16px]">add</span><span>New Batch</span></button><button class="flex items-center gap-1.5 px-space-md py-1 rounded bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors border border-outline-variant/20" type="button"><span class="material-symbols-outlined text-[16px]">file_upload</span><span>Import File</span></button><div class="flex items-center gap-space-sm px-space-md py-1 rounded bg-surface-container-low border border-outline-variant/30 text-on-surface-variant text-label-sm font-label-sm"><span class="material-symbols-outlined text-[15px]">terminal</span><span>Command Palette</span><kbd class="px-1 rounded bg-surface-container-high border border-outline-variant/40 font-code-sm text-code-sm text-primary">Ctrl+K</kbd></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary/10 border border-tertiary-container/30 text-tertiary font-label-sm text-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span><span>Offline &amp; Local</span></div><button class="relative p-1 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Task Queue" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-primary font-code-sm text-[9px] font-bold text-on-primary flex items-center justify-center">2</span></button><button class="p-1 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Theme Switcher" type="button"><span class="material-symbols-outlined text-[20px]">dark_mode</span></button><button class="p-1 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Application Menu" type="button"><span class="material-symbols-outlined text-[20px]">menu</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><aside class="fixed left-0 top-12 bottom-0 w-60 bg-surface-container-low border-r border-outline-variant/20 z-40 flex flex-col justify-between"><div class="p-space-sm flex flex-col gap-space-sm"><div class="relative"><span class="material-symbols-outlined absolute left-2.5 top-2 text-[16px] text-outline">search</span><input class="w-full pl-8 pr-14 py-1.5 bg-surface-container rounded font-body-sm text-body-sm text-on-surface placeholder:text-outline border border-outline-variant/30 focus:border-primary focus:outline-none" placeholder="Search tools…" type="text"/><kbd class="absolute right-2 top-2 font-code-sm text-[10px] text-outline px-1 rounded bg-surface-container-high border border-outline-variant/30">Ctrl+Shift+F</kbd></div><nav class="flex flex-col gap-0.5 mt-1" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="utilities" href="#"><span class="material-symbols-outlined text-[18px]">calculate</span><span>Utilities</span></a><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="pdf-tools" href="#"><span class="material-symbols-outlined text-[18px]">description</span><span>PDF</span></a><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="image-workshop" href="#"><span class="material-symbols-outlined text-[18px]">image</span><span>Images</span></a><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="media-lab" href="#"><span class="material-symbols-outlined text-[18px]">movie</span><span>Media</span></a><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="document-studio" href="#"><span class="material-symbols-outlined text-[18px]">article</span><span>Documents</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-1.5 rounded transition-colors bg-primary-container text-on-primary-container font-semibold" data-path="universal-convert" href="#"><span class="material-symbols-outlined text-[18px]">sync_alt</span><span>Convert</span></a><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="crypt-security" href="#"><span class="material-symbols-outlined text-[18px]">shield</span><span>Security</span></a><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="developer-tools" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span>Dev Tools</span></a></nav></div><div class="p-space-sm border-t border-outline-variant/20 flex flex-col gap-0.5 bg-surface-container-low/50"><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="system-settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span>Settings</span></a><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="plugin-manager" href="#"><span class="material-symbols-outlined text-[18px]">extension</span><span>Plugins</span></a><a class="flex items-center gap-space-sm px-space-md py-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="about-anvil" href="#"><span class="material-symbols-outlined text-[18px]">info</span><span>About</span></a></div></aside><div class="pl-60"><main class="relative pt-12 pb-14 w-full px-space-lg min-h-screen bg-surface-dim"><div class="flex flex-col w-full">
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg">
+<!-- Center Stage Workbench Area (Span 9) -->
+<div class="xl:col-span-9 flex flex-col gap-space-lg min-w-0">
+<!-- Sub-Chrome Breadcrumb & Metrics Banner -->
+<div class="flex flex-wrap items-center justify-between gap-space-md bg-surface-container-low px-space-lg py-space-sm rounded-xl shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="p-1 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">sync_alt</span>
+</span>
+<div class="flex items-center gap-1.5 font-label-md text-label-md">
+<span class="text-on-surface-variant font-medium">Pipeline</span>
+<span class="text-outline-variant font-code-sm text-code-sm">/</span>
+<span class="text-on-surface font-semibold">Universal Batch Converter</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-code-sm text-code-sm">v2.4-local-engine</span>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-2 font-code-sm text-code-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span>RAM: <strong class="text-on-surface font-medium">342 MB</strong></span>
+<span class="text-outline-variant">|</span>
+<span>Worker Threads: <strong class="text-on-surface font-medium">8 / 8</strong></span>
+</div>
+<button class="p-1 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Toggle Compact Mode" type="button">
+<span class="material-symbols-outlined text-[18px]">view_compact</span>
+</button>
+</div>
+</div>
+<!-- Top Hero Dropzone with Anvil Silhouette Watermark -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low p-space-xl text-center shadow-md group transition-all duration-300 hover:bg-surface-container">
+<!-- Watermark Background Graphic -->
+<div class="pointer-events-none absolute -right-6 -bottom-8 w-64 h-64 opacity-5 mix-blend-screen transition-opacity group-hover:opacity-10">
+<img alt="Anvil Brand Logo" class="w-full h-full object-contain filter grayscale invert brightness-200" src="https://lh3.googleusercontent.com/aida/AEtjO1XA0Pg0y0-msyiXG0ZTRQVYHUxhjrhPMaQN9SJbs32bAZUYrlNBWsXM62H1KZdm5779i9r6ZGTZSGBteeZ1E28qiE1PbejsrU3ruIrVImvyEfzJUopPVMyfULscPrvbvpgj4BYq-Z-kH1qS_3DRFlczRUbmGBy9I0WGfMoSRp3ySfjHctBlNO5FVou46nMHgAXM3XzWxkhvUH-RI9vmIKGC0CERyaAsIi6FlMk1Y2kr5QwGBDHyG7ey8Cnt"/>
+</div>
+<div class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-[0.03]">
+<img alt="Anvil Brand Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XA0Pg0y0-msyiXG0ZTRQVYHUxhjrhPMaQN9SJbs32bAZUYrlNBWsXM62H1KZdm5779i9r6ZGTZSGBteeZ1E28qiE1PbejsrU3ruIrVImvyEfzJUopPVMyfULscPrvbvpgj4BYq-Z-kH1qS_3DRFlczRUbmGBy9I0WGfMoSRp3ySfjHctBlNO5FVou46nMHgAXM3XzWxkhvUH-RI9vmIKGC0CERyaAsIi6FlMk1Y2kr5QwGBDHyG7ey8Cnt"/>
+</div>
+<div class="relative z-10 flex flex-col items-center justify-center max-w-xl mx-auto">
+<div class="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center mb-space-md text-primary shadow-inner">
+<span class="material-symbols-outlined text-[32px] group-hover:scale-110 transition-transform duration-200">cloud_sync</span>
+</div>
+<p class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">
+            Drop files or folders here to convert locally
+          </p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1.5 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary">lock</span>
+<span>Zero network transmission — 100% offline hardware-accelerated processing</span>
+</p>
+<div class="flex items-center gap-space-sm mt-space-lg">
+<button class="px-space-lg py-2 rounded-lg bg-primary hover:bg-primary-fixed-dim text-on-primary font-label-md text-label-md font-semibold transition-all flex items-center gap-2 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">add_box</span>
+<span>Browse System Files…</span>
+</button>
+<button class="px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[18px]">folder_open</span>
+<span>Add Folder</span>
+</button>
+<button class="px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1" title="Paste Clipboard File" type="button">
+<span class="material-symbols-outlined text-[18px]">content_paste</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Preset Chips -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Workflow Presets (Quick Setup)</span>
+<button class="text-primary hover:underline font-label-sm text-label-sm flex items-center gap-0.5" type="button">
+<span>Manage Custom Rules</span>
+<span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+</button>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-container/20 hover:bg-primary-container/30 text-primary transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_size_select_large</span>
+<span class="font-label-md text-label-md font-medium">Web-Ready Images (WebP 85%)</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary/20 text-[10px] font-code-sm">IMG</span>
+</button>
+<button class="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" type="button">
+<span class="material-symbols-outlined text-[16px] text-tertiary">graphic_eq</span>
+<span class="font-label-md text-label-md">Lossless Audio (FLAC)</span>
+<span class="px-1.5 py-0.2 rounded-full bg-tertiary/10 text-tertiary text-[10px] font-code-sm">24-bit</span>
+</button>
+<button class="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+<span class="font-label-md text-label-md">Archive Document (PDF/A-2b)</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-highest text-on-surface-variant text-[10px] font-code-sm">ISO</span>
+</button>
+<button class="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">mail</span>
+<span class="font-label-md text-label-md">Email Compressed (Max 15MB)</span>
+</button>
+<button class="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">code</span>
+<span class="font-label-md text-label-md">Developer Assets (SVG Minify)</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-highest text-on-surface-variant text-[10px] font-code-sm">SVGO</span>
+</button>
+</div>
+</div>
+<!-- Center Batch Queue Table Container -->
+<div class="rounded-xl bg-surface-container-low shadow-md overflow-hidden flex flex-col">
+<!-- Table Toolbar -->
+<div class="flex items-center justify-between px-space-lg py-3 bg-surface-container-high/60">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-2">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest text-primary accent-primary cursor-pointer" id="select-all" type="checkbox"/>
+<label class="font-label-md text-label-md text-on-surface cursor-pointer font-medium" for="select-all">
+                4 Files in Batch
+              </label>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-sm text-code-sm">4.82 MB Total</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-[16px] text-outline">tune</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Batch Output:</span>
+<select class="bg-transparent font-code-sm text-code-sm text-primary focus:outline-none cursor-pointer">
+<option class="bg-surface-container-high">Individual Rules</option>
+<option class="bg-surface-container-high">Force All to WebP</option>
+<option class="bg-surface-container-high">Force All to PDF</option>
+<option class="bg-surface-container-high">Force All to ZIP</option>
+</select>
+</div>
+<button class="p-1 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Sort Order" type="button">
+<span class="material-symbols-outlined text-[18px]">sort</span>
+</button>
+</div>
+</div>
+<!-- Table Grid -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container/40 text-outline font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-2.5 px-space-lg w-10"></th>
+<th class="py-2.5 px-space-md">File Name &amp; Size</th>
+<th class="py-2.5 px-space-md">Source</th>
+<th class="py-2.5 px-space-md">Output Target</th>
+<th class="py-2.5 px-space-md">Destination Folder</th>
+<th class="py-2.5 px-space-lg">Progress Status</th>
+<th class="py-2.5 px-space-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 font-body-sm text-body-sm">
+<!-- Row 1: Completed DOCX -> PDF -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-lg">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest text-primary accent-primary cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">description</span>
+</span>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">quarterly-report-2025.docx</span>
+<span class="font-code-sm text-code-sm text-outline">480 KB • Modified 14m ago</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-high font-code-sm text-code-sm text-on-surface-variant uppercase">DOCX</span>
+</td>
+<td class="py-3 px-space-md">
+<div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-bright transition-colors cursor-pointer">
+<span class="font-code-sm text-code-sm font-semibold text-primary">PDF (Print 300dpi)</span>
+<span class="material-symbols-outlined text-[14px] text-outline">expand_more</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="font-code-sm text-code-sm text-on-surface-variant truncate max-w-[140px] block" title="~/Documents/Converted">
+                    ~/Documents/Converted
+                  </span>
+</td>
+<td class="py-3 px-space-lg">
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 rounded-full bg-tertiary/20 text-tertiary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[14px]">check</span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-tertiary font-semibold">Completed (312 KB)</span>
+<span class="font-code-sm text-[11px] text-outline">Saved 35% • 0.8s</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right">
+<div class="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100">
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" title="Show in File Manager" type="button">
+<span class="material-symbols-outlined text-[16px]">folder</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" title="Preview File" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Converting PNG -> WebP (84%) -->
+<tr class="bg-surface-container/60 hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-lg">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest text-primary accent-primary cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">image</span>
+</span>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">hero-render-4k.png</span>
+<span class="font-code-sm text-code-sm text-outline">3.10 MB • 3840×2160</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-high font-code-sm text-code-sm text-on-surface-variant uppercase">PNG</span>
+</td>
+<td class="py-3 px-space-md">
+<div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-bright transition-colors cursor-pointer">
+<span class="font-code-sm text-code-sm font-semibold text-primary">WebP (Lossy 85%)</span>
+<span class="material-symbols-outlined text-[14px] text-outline">expand_more</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="font-code-sm text-code-sm text-on-surface-variant truncate max-w-[140px] block" title="~/Documents/Converted/Assets">
+                    ~/Documents/Converted/Assets
+                  </span>
+</td>
+<td class="py-3 px-space-lg">
+<div class="flex flex-col gap-1 w-44">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-primary font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] animate-spin">sync</span>
+<span>Converting 84%</span>
+</span>
+<span class="font-code-sm text-[11px] text-outline">1.2s left</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full transition-all duration-300" style="width: 84%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1 rounded hover:bg-surface-container-high text-error hover:text-error-container" title="Stop Conversion" type="button">
+<span class="material-symbols-outlined text-[16px]">stop_circle</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant" title="Options" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Queued WAV -> MP3 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-lg">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest text-primary accent-primary cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">audio_file</span>
+</span>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">podcast-episode-42.wav</span>
+<span class="font-code-sm text-code-sm text-outline">1.20 MB • 44.1kHz Stereo</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-high font-code-sm text-code-sm text-on-surface-variant uppercase">WAV</span>
+</td>
+<td class="py-3 px-space-md">
+<div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-bright transition-colors cursor-pointer">
+<span class="font-code-sm text-code-sm font-semibold text-primary">MP3 (320 kbps CBR)</span>
+<span class="material-symbols-outlined text-[14px] text-outline">expand_more</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="font-code-sm text-code-sm text-on-surface-variant truncate max-w-[140px] block" title="~/Documents/Converted">
+                    ~/Documents/Converted
+                  </span>
+</td>
+<td class="py-3 px-space-lg">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-outline font-medium">Queued (#2 in queue)</span>
+</div>
+</td>
+<td class="py-3 px-space-md text-right">
+<div class="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100">
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" title="Prioritize" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-high text-outline hover:text-error" title="Remove" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Ready TIFF -> PDF (OCR) -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="py-3 px-space-lg">
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest text-primary accent-primary cursor-pointer" type="checkbox"/>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">scanner</span>
+</span>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">archive_scan.tiff</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary-container/30 text-tertiary text-[10px] font-code-sm">OCR Active</span>
+</div>
+<span class="font-code-sm text-code-sm text-outline">42 KB • Multi-page TIFF</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="px-2 py-0.5 rounded bg-surface-container-high font-code-sm text-code-sm text-on-surface-variant uppercase">TIFF</span>
+</td>
+<td class="py-3 px-space-md">
+<div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-bright transition-colors cursor-pointer">
+<span class="font-code-sm text-code-sm font-semibold text-primary">PDF (Searchable / OCR)</span>
+<span class="material-symbols-outlined text-[14px] text-outline">expand_more</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="font-code-sm text-code-sm text-on-surface-variant truncate max-w-[140px] block" title="~/Documents/Converted/Archival">
+                    ~/Documents/Converted/Archival
+                  </span>
+</td>
+<td class="py-3 px-space-lg">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-sm text-label-sm font-medium">Ready</span>
+<span class="font-code-sm text-[11px] text-outline">Est. 1.8s</span>
+</div>
+</td>
+<td class="py-3 px-space-md text-right">
+<div class="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100">
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface" title="Tune OCR Settings" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-high text-outline hover:text-error" title="Remove" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Inline Table Summary Footer -->
+<div class="px-space-lg py-2.5 bg-surface-container-high/30 flex items-center justify-between text-outline font-label-sm text-label-sm">
+<div class="flex items-center gap-space-md">
+<span>3 waiting tasks</span>
+<span>•</span>
+<span>Total estimated time remaining: <strong class="text-on-surface">3.4 seconds</strong></span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="hover:text-on-surface transition-colors" type="button">Select All</button>
+<span>•</span>
+<button class="hover:text-on-surface transition-colors" type="button">Deselect All</button>
+</div>
+</div>
+</div>
+<!-- Bottom Action Footer Card -->
+<div class="rounded-xl bg-surface-container p-space-lg shadow-lg flex flex-col md:flex-row items-center justify-between gap-space-md">
+<!-- Output Directory Picker -->
+<div class="flex items-center gap-space-sm w-full md:w-auto min-w-0">
+<span class="material-symbols-outlined text-outline text-[20px]">folder_special</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm uppercase tracking-wide text-outline">Target Destination</span>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-code-md text-code-md text-on-surface bg-surface-container-lowest px-2.5 py-1 rounded-md truncate max-w-xs md:max-w-sm">
+                /home/user/Documents/Converted
+              </span>
+<button class="px-2 py-1 rounded-md bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+                Change…
+              </button>
+</div>
+</div>
+</div>
+<!-- Action Controls -->
+<div class="flex flex-wrap items-center justify-end gap-space-sm w-full md:w-auto">
+<button class="px-space-md py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[18px]">playlist_remove</span>
+<span>Clear Completed</span>
+</button>
+<button class="px-space-md py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Add Files…</span>
+</button>
+<button class="px-space-xl py-2.5 rounded-lg bg-primary hover:bg-primary-fixed-dim text-on-primary font-label-md text-label-md font-semibold transition-all flex items-center gap-2 shadow-md hover:shadow-lg" type="button">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+<span>Convert All (3 remaining)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Inspector / Context Deck (Span 3) -->
+<div class="xl:col-span-3 flex flex-col gap-space-lg">
+<!-- Conversion Profile Settings Card -->
+<div class="rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">settings_suggest</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Active Profile</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm">Engine 8x</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<div class="p-space-sm rounded-lg bg-surface-container flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-outline">Target Color Profile</label>
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Preserve Original (sRGB D65)</span>
+<span class="material-symbols-outlined text-[16px] text-outline">tune</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-outline">Conflict Handling</label>
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Auto-Rename (_v2, _v3)</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Preserve File Metadata</span>
+<span class="font-code-sm text-[11px] text-outline">EXIF, XMP, IPTC tags</span>
+</div>
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest text-primary accent-primary cursor-pointer" type="checkbox"/>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Hardware Accel (NVENC/VAAPI)</span>
+<span class="font-code-sm text-[11px] text-outline">Using Vulkan pipeline</span>
+</div>
+<input checked="" class="w-4 h-4 rounded bg-surface-container-lowest text-primary accent-primary cursor-pointer" type="checkbox"/>
+</div>
+</div>
+</div>
+<!-- Quick Inspection Preview of Selected File -->
+<div class="rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">search_insights</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Stream Inspector</span>
+</div>
+<span class="font-code-sm text-code-sm text-outline">hero-render-4k.png</span>
+</div>
+<!-- Inline Mini Visual Metric / Audio-Wave Sparkline Mock -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest flex flex-col gap-2">
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>Compression Curve</span>
+<span class="text-tertiary">3.1MB → 512KB (~83%)</span>
+</div>
+<svg class="w-full h-12 text-primary" fill="none" preserveaspectratio="none" viewbox="0 0 200 40">
+<path d="M0 38 Q 40 38, 70 20 T 140 10 T 200 6" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path>
+<path d="M0 38 Q 40 38, 70 20 T 140 10 T 200 6 L 200 40 L 0 40 Z" fill="currentColor" fill-opacity="0.12"></path>
+</svg>
+<div class="flex items-center justify-between font-code-sm text-[11px] text-outline">
+<span>Stage: Entropy Coding</span>
+<span>Quantization: 85</span>
+</div>
+</div>
+<div class="space-y-1.5 font-code-sm text-code-sm">
+<div class="flex items-center justify-between py-1 px-2 rounded bg-surface-container">
+<span class="text-outline">Resolution</span>
+<span class="text-on-surface">3840 × 2160 (16:9)</span>
+</div>
+<div class="flex items-center justify-between py-1 px-2 rounded bg-surface-container">
+<span class="text-outline">Color Space</span>
+<span class="text-on-surface">RGBA 8-bit depth</span>
+</div>
+<div class="flex items-center justify-between py-1 px-2 rounded bg-surface-container">
+<span class="text-outline">Alpha Channel</span>
+<span class="text-on-surface">Retained</span>
+</div>
+<div class="flex items-center justify-between py-1 px-2 rounded bg-surface-container">
+<span class="text-outline">Target Codec</span>
+<span class="text-primary font-medium">libwebp v1.3.2</span>
+</div>
+</div>
+</div>
+<!-- Engine Status & Offline Integrity Notice -->
+<div class="rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[18px]">verified</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Anvil Sandboxed Engine</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+          Operating in strict offline bubble via Linux bubblewrap sandbox. No telemetry, zero outbound socket connectivity, and deterministic SHA-256 binary validation.
+        </p>
+<div class="pt-2 flex items-center justify-between text-outline font-code-sm text-[11px]">
+<span>Sandbox PID: 48921</span>
+<span class="text-tertiary">Secured</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    // Interactive select-all checkbox logic
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) {
+      selectAll.addEventListener('change', (e) => {
+        const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = e.target.checked);
+      });
+    }
+  })();
+</script></main></div><footer class="fixed bottom-0 left-60 right-0 h-14 bg-surface-container border-t border-outline-variant/30 z-30 flex items-center justify-between px-space-lg shadow-[0_-1px_6px_rgba(0,0,0,0.25)]"><div class="flex items-center gap-space-lg flex-1 max-w-2xl"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px] text-primary animate-spin">sync</span><div class="flex flex-col"><div class="flex items-center gap-2"><span class="font-label-md text-label-md text-on-surface">Converting technical-spec.docx to PDF</span><span class="font-code-sm text-code-sm text-outline">1.4s</span></div><div class="w-64 bg-surface-container-highest rounded-full h-1.5 mt-1 overflow-hidden"><div class="bg-primary-container h-full rounded-full" style="width: 72%"></div></div></div><span class="font-code-sm text-code-sm text-primary ml-1">72%</span></div><div class="flex items-center gap-1"><button class="p-1 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface" title="Pause Task" type="button"><span class="material-symbols-outlined text-[16px]">pause</span></button><button class="p-1 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface" title="Cancel Task" type="button"><span class="material-symbols-outlined text-[16px]">close</span></button></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high border border-outline-variant/30 font-label-sm text-label-sm text-on-surface-variant"><span class="material-symbols-outlined text-[14px] text-tertiary">check_circle</span><span>3 completed files</span></div><button class="flex items-center gap-1 text-outline hover:text-on-surface font-label-sm text-label-sm transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">expand_more</span><span>Details</span></button></div></footer></body></html>
