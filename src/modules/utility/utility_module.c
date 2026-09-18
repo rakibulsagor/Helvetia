@@ -10,6 +10,10 @@
  *   6. Color Tool          (HEX <-> RGB)
  * ================================================================ */
 #include "utility_module.h"
+#include "../../ui/window.h"
+#include "color_studio.h"
+#include "qr_studio.h"
+#include "timezone_studio.h"
 
 #include <gtk/gtk.h>
 #include <glib.h>
@@ -287,6 +291,7 @@ static GtkWidget *build_uuid_tool(void) {
  * ================================================================ */
 typedef struct {
     GtkWidget *value_entry, *from_dd, *to_dd, *cat_dd, *result;
+    GtkStringList *from_model, *to_model;
 } UnitCtx;
 
 /* Category: 0=Length, 1=Weight, 2=Temperature */
@@ -354,16 +359,11 @@ static void on_unit_category_changed(GtkDropDown *dd, GParamSpec *ps,
     else if (cat == 1) list = weight_units;
     else               list = temp_units;
 
-    /* Each drop-down MUST have its own model — sharing one model between
-     * two GtkDropDown widgets causes a GTK list-item-manager assertion. */
-    GtkStringList *from_model = gtk_string_list_new(list);
-    GtkStringList *to_model   = gtk_string_list_new(list);
-
-    gtk_drop_down_set_model(GTK_DROP_DOWN(ctx->from_dd), G_LIST_MODEL(from_model));
-    gtk_drop_down_set_model(GTK_DROP_DOWN(ctx->to_dd),   G_LIST_MODEL(to_model));
-
-    g_object_unref(from_model);
-    g_object_unref(to_model);
+    guint n_items = g_list_model_get_n_items(G_LIST_MODEL(ctx->from_model));
+    gtk_string_list_splice(ctx->from_model, 0, n_items, list);
+    
+    n_items = g_list_model_get_n_items(G_LIST_MODEL(ctx->to_model));
+    gtk_string_list_splice(ctx->to_model, 0, n_items, list);
 }
 
 static GtkWidget *build_unit_converter(void) {
@@ -377,8 +377,6 @@ static GtkWidget *build_unit_converter(void) {
     GtkStringList *to_model   = gtk_string_list_new(length_units);
     GtkWidget *from_dd = gtk_drop_down_new(G_LIST_MODEL(from_model), NULL);
     GtkWidget *to_dd   = gtk_drop_down_new(G_LIST_MODEL(to_model),   NULL);
-    g_object_unref(from_model); /* drop-down took its own ref */
-    g_object_unref(to_model);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(to_dd), 4); /* default to: inch */
 
     GtkWidget *value_entry = gtk_entry_new();
@@ -394,11 +392,16 @@ static GtkWidget *build_unit_converter(void) {
     ctx->to_dd           = to_dd;
     ctx->cat_dd          = cat_dd;
     ctx->result          = result;
+    ctx->from_model      = from_model;
+    ctx->to_model        = to_model;
+    /* Clean up the models when ctx is freed */
 
     g_signal_connect(cat_dd, "notify::selected",
                      G_CALLBACK(on_unit_category_changed), ctx);
-    g_signal_connect_data(btn, "clicked", G_CALLBACK(on_unit_convert),
-                          ctx, closure_free, 0);
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_unit_convert), ctx);
+    g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_free), ctx);
+    g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_object_unref), from_model);
+    g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_object_unref), to_model);
     g_signal_connect_data(value_entry, "activate", G_CALLBACK(on_unit_convert),
                           ctx, NULL, 0);
 
@@ -425,111 +428,6 @@ static GtkWidget *build_unit_converter(void) {
 }
 
 /* ================================================================
- * Tool 6 — Color Tool  (HEX ↔ RGB)
- * ================================================================ */
-typedef struct { GtkWidget *hex_entry, *r_entry, *g_entry, *b_entry, *swatch; } ColorCtx;
-
-static void update_swatch(ColorCtx *ctx, guint8 r, guint8 g, guint8 b) {
-    (void)ctx;
-    char css[128];
-    snprintf(css, sizeof css,
-        ".helvetia-swatch { background-color: rgb(%u,%u,%u); border-radius:8px; min-height:50px; }",
-        r, g, b);
-    GtkCssProvider *p = gtk_css_provider_new();
-    gtk_css_provider_load_from_string(p, css);
-    gtk_style_context_add_provider_for_display(
-        gdk_display_get_default(),
-        GTK_STYLE_PROVIDER(p),
-        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
-    g_object_unref(p);
-}
-
-static void on_hex_to_rgb(GtkButton *btn, gpointer user_data) {
-    (void)btn;
-    ColorCtx *ctx  = user_data;
-    const char *hex = gtk_editable_get_text(GTK_EDITABLE(ctx->hex_entry));
-    /* strip leading # */
-    if (*hex == '#') hex++;
-    if (strlen(hex) != 6) { return; }
-
-    unsigned int r, g, b;
-    if (sscanf(hex, "%02x%02x%02x", &r, &g, &b) != 3) return;
-
-    char sr[4], sg[4], sb[4];
-    snprintf(sr,sizeof sr,"%u",r);
-    snprintf(sg,sizeof sg,"%u",g);
-    snprintf(sb,sizeof sb,"%u",b);
-    gtk_editable_set_text(GTK_EDITABLE(ctx->r_entry), sr);
-    gtk_editable_set_text(GTK_EDITABLE(ctx->g_entry), sg);
-    gtk_editable_set_text(GTK_EDITABLE(ctx->b_entry), sb);
-    update_swatch(ctx, (guint8)r, (guint8)g, (guint8)b);
-}
-
-static void on_rgb_to_hex(GtkButton *btn, gpointer user_data) {
-    (void)btn;
-    ColorCtx *ctx = user_data;
-    int r = atoi(gtk_editable_get_text(GTK_EDITABLE(ctx->r_entry)));
-    int g = atoi(gtk_editable_get_text(GTK_EDITABLE(ctx->g_entry)));
-    int b = atoi(gtk_editable_get_text(GTK_EDITABLE(ctx->b_entry)));
-    r = CLAMP(r, 0, 255); g = CLAMP(g, 0, 255); b = CLAMP(b, 0, 255);
-    char buf[8];
-    snprintf(buf, sizeof buf, "#%02X%02X%02X", r, g, b);
-    gtk_editable_set_text(GTK_EDITABLE(ctx->hex_entry), buf);
-    update_swatch(ctx, (guint8)r, (guint8)g, (guint8)b);
-}
-
-static GtkWidget *build_color_tool(void) {
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-
-    GtkWidget *hex_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(hex_entry), "#RRGGBB");
-
-    GtkWidget *rgb_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    GtkWidget *r_e = gtk_entry_new(), *g_e = gtk_entry_new(), *b_e = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(r_e), "R");
-    gtk_entry_set_placeholder_text(GTK_ENTRY(g_e), "G");
-    gtk_entry_set_placeholder_text(GTK_ENTRY(b_e), "B");
-    gtk_widget_set_hexpand(r_e, TRUE);
-    gtk_widget_set_hexpand(g_e, TRUE);
-    gtk_widget_set_hexpand(b_e, TRUE);
-    gtk_box_append(GTK_BOX(rgb_row), r_e);
-    gtk_box_append(GTK_BOX(rgb_row), g_e);
-    gtk_box_append(GTK_BOX(rgb_row), b_e);
-
-    GtkWidget *swatch = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_add_css_class(swatch, "helvetia-swatch");
-
-    ColorCtx *ctx   = g_new0(ColorCtx, 1);
-    ctx->hex_entry  = hex_entry;
-    ctx->r_entry    = r_e;
-    ctx->g_entry    = g_e;
-    ctx->b_entry    = b_e;
-    ctx->swatch     = swatch;
-
-    GtkWidget *btn_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    GtkWidget *h2r = gtk_button_new_with_label("HEX → RGB");
-    GtkWidget *r2h = gtk_button_new_with_label("RGB → HEX");
-    gtk_widget_add_css_class(h2r, "suggested-action");
-    gtk_widget_add_css_class(r2h, "suggested-action");
-
-    g_signal_connect_data(h2r, "clicked", G_CALLBACK(on_hex_to_rgb),
-                          ctx, closure_free, 0);
-    g_signal_connect_data(r2h, "clicked", G_CALLBACK(on_rgb_to_hex),
-                          ctx, NULL, 0);
-
-    gtk_box_append(GTK_BOX(btn_row), h2r);
-    gtk_box_append(GTK_BOX(btn_row), r2h);
-
-    gtk_box_append(GTK_BOX(box), hex_entry);
-    gtk_box_append(GTK_BOX(box), gtk_label_new("— or —"));
-    gtk_box_append(GTK_BOX(box), rgb_row);
-    gtk_box_append(GTK_BOX(box), btn_row);
-    gtk_box_append(GTK_BOX(box), swatch);
-
-    return box;
-}
-
-/* ================================================================
  * Module view — 2-column responsive grid of cards
  * ================================================================ */
 /* ================================================================
@@ -543,97 +441,137 @@ static const char *kw_unit[] = {"unit", "length", "weight", "temperature", "conv
 static const char *kw_color[] = {"color", "hex", "rgb", "picker", "converter", NULL};
 
 static const HelvetiaTool tools_math[] = {
-    { "calc_sci", "Scientific Calculator", "Advanced math operations", "accessories-calculator-symbolic", NULL, "calc", NULL },
-    { "calc_pct", "Percentage Calculator", "Quick percentage math", "accessories-calculator-symbolic", NULL, "pct", NULL },
-    { "calc_disc", "Discount Calculator", "Calculate final price", "accessories-calculator-symbolic", NULL, "discount", NULL },
-    { "calc_tip", "Tip Splitter", "Split bills easily", "accessories-calculator-symbolic", NULL, "tip", NULL },
-    { "calc_markup", "Markup Calculator", "Calculate profit margins", "accessories-calculator-symbolic", NULL, "markup", NULL },
-    { "calc_loan", "Loan / EMI Calculator", "Calculate loan payments", "accessories-calculator-symbolic", NULL, "loan", NULL },
-    { "calc_compound", "Compound Interest", "Calculate investments", "accessories-calculator-symbolic", NULL, "interest", NULL },
+    { "calc_sci", "Scientific Calculator", "Advanced math operations", "accessories-calculator-symbolic", NULL, "calc", build_calc_sci },
+    { "calc_frac", "Fraction Calculator", "Fractions operations", "accessories-calculator-symbolic", NULL, "frac", build_frac_calc },
+    { "calc_pct", "Percentage Calculator", "Quick percentage math", "accessories-calculator-symbolic", NULL, "pct", build_pct_calc },
+    { "rand_num", "Random Number Generator", "Generate random numbers", "media-playlist-shuffle-symbolic", NULL, "rand", build_generic_random_tool },
+    { "calc_pct_err", "Percent Error Calculator", "Calculate percent error", "accessories-calculator-symbolic", NULL, "pcterr", build_coming_soon },
+    { "calc_exp", "Exponent Calculator", "Calculate exponents", "accessories-calculator-symbolic", NULL, "exp", build_coming_soon },
+    { "calc_bin", "Binary Calculator", "Binary operations", "format-text-numeric-symbolic", NULL, "bin", build_coming_soon },
+    { "calc_hex", "Hex Calculator", "Hex operations", "format-text-numeric-symbolic", NULL, "hex", build_coming_soon },
+    { "calc_halflife", "Half-Life Calculator", "Calculate half-life", "accessories-calculator-symbolic", NULL, "halflife", build_coming_soon },
+    { "calc_quad", "Quadratic Formula Calculator", "Solve quadratic equations", "accessories-calculator-symbolic", NULL, "quad", build_coming_soon },
+    { "calc_log", "Log Calculator", "Logarithms", "accessories-calculator-symbolic", NULL, "log", build_coming_soon },
+    { "calc_ratio", "Ratio Calculator", "Calculate ratios", "accessories-calculator-symbolic", NULL, "ratio", build_coming_soon },
+    { "calc_root", "Root Calculator", "Calculate roots", "accessories-calculator-symbolic", NULL, "root", build_coming_soon },
+    { "calc_lcm", "Least Common Multiple", "Calculate LCM", "accessories-calculator-symbolic", NULL, "lcm", build_coming_soon },
+    { "calc_gcf", "Greatest Common Factor", "Calculate GCF", "accessories-calculator-symbolic", NULL, "gcf", build_coming_soon },
+    { "calc_factor", "Factor Calculator", "Find factors", "accessories-calculator-symbolic", NULL, "factor", build_coming_soon },
+    { "calc_round", "Rounding Calculator", "Round numbers", "accessories-calculator-symbolic", NULL, "round", build_coming_soon },
+    { "calc_matrix", "Matrix Calculator", "Matrix operations", "accessories-calculator-symbolic", NULL, "matrix", build_coming_soon },
+    { "calc_scinote", "Scientific Notation Calculator", "Scientific notation", "accessories-calculator-symbolic", NULL, "scinote", build_coming_soon },
+    { "calc_bignum", "Big Number Calculator", "Big number math", "accessories-calculator-symbolic", NULL, "bignum", build_coming_soon },
     { "base_convert", "Number Base Converter", "Bin · Oct · Dec · Hex", "format-text-numeric-symbolic", kw_base, "base", build_base_converter },
-    { "roman_num", "Roman Numeral", "Convert to/from Roman numerals", "format-text-numeric-symbolic", NULL, "roman", NULL },
-    { "rand_num", "Random Number", "Generate random integers", "media-playlist-shuffle-symbolic", NULL, "rand", NULL },
+    { "roman_num", "Roman Numeral", "Convert to/from Roman numerals", "format-text-numeric-symbolic", NULL, "roman", build_generic_math_tool },
+    { .id = NULL }
+};
+
+static const HelvetiaTool tools_statistics[] = {
+    { "calc_stddev", "Standard Deviation Calculator", "Calculate std deviation", "accessories-calculator-symbolic", NULL, "stddev", build_stddev_calc },
+    { "calc_seq", "Number Sequence Calculator", "Calculate sequences", "accessories-calculator-symbolic", NULL, "seq", build_coming_soon },
+    { "calc_samplesize", "Sample Size Calculator", "Calculate sample size", "accessories-calculator-symbolic", NULL, "samplesize", build_coming_soon },
+    { "calc_prob", "Probability Calculator", "Calculate probability", "accessories-calculator-symbolic", NULL, "prob", build_coming_soon },
+    { "calc_stats", "Statistics Calculator", "Calculate stats", "accessories-calculator-symbolic", NULL, "stats", build_coming_soon },
+    { "calc_mean", "Mean, Median, Mode, Range", "Calculate averages", "accessories-calculator-symbolic", NULL, "mean", build_coming_soon },
+    { "calc_perm", "Permutation and Combination", "Calculate permutations", "accessories-calculator-symbolic", NULL, "perm", build_coming_soon },
+    { "calc_zscore", "Z-score Calculator", "Calculate Z-score", "accessories-calculator-symbolic", NULL, "zscore", build_coming_soon },
+    { "calc_conf", "Confidence Interval Calculator", "Calculate confidence interval", "accessories-calculator-symbolic", NULL, "conf", build_coming_soon },
+    { .id = NULL }
+};
+
+static const HelvetiaTool tools_geometry[] = {
+    { "calc_triangle", "Triangle Calculator", "Calculate triangle properties", "accessories-calculator-symbolic", NULL, "triangle", build_tri_calc },
+    { "calc_volume", "Volume Calculator", "Calculate volume", "accessories-calculator-symbolic", NULL, "volume", build_vol_calc },
+    { "calc_slope", "Slope Calculator", "Calculate slope", "accessories-calculator-symbolic", NULL, "slope", build_coming_soon },
+    { "calc_area", "Area Calculator", "Calculate area", "accessories-calculator-symbolic", NULL, "area", build_coming_soon },
+    { "calc_dist", "Distance Calculator", "Calculate distance", "accessories-calculator-symbolic", NULL, "dist", build_coming_soon },
+    { "calc_circle", "Circle Calculator", "Calculate circle properties", "accessories-calculator-symbolic", NULL, "circle", build_coming_soon },
+    { "calc_surf", "Surface Area Calculator", "Calculate surface area", "accessories-calculator-symbolic", NULL, "surf", build_coming_soon },
+    { "calc_pythag", "Pythagorean Theorem", "Calculate hypotenuse", "accessories-calculator-symbolic", NULL, "pythag", build_coming_soon },
+    { "calc_righttri", "Right Triangle Calculator", "Calculate right triangles", "accessories-calculator-symbolic", NULL, "righttri", build_coming_soon },
     { .id = NULL }
 };
 
 static const HelvetiaTool tools_units[] = {
     { "unit_convert", "Unit Converter", "Length · Weight · Temperature", "view-sort-ascending-symbolic", kw_unit, "unit", build_unit_converter },
-    { "temp_convert", "Temperature Converter", "C · F · K", "view-sort-ascending-symbolic", NULL, "temp", NULL },
-    { "currency", "Currency Converter", "Offline exchange rates", "view-sort-ascending-symbolic", NULL, "currency", NULL },
-    { "cooking", "Cooking Measure", "Cups · Spoons · Oz", "view-sort-ascending-symbolic", NULL, "cook", NULL },
-    { "data_size", "Data Size Converter", "B · KB · MB · GB", "drive-harddisk-symbolic", NULL, "datasize", NULL },
-    { "speed", "Speed Converter", "mph · km/h · m/s", "view-sort-ascending-symbolic", NULL, "speed", NULL },
-    { "pressure", "Pressure Converter", "bar · psi · Pa", "view-sort-ascending-symbolic", NULL, "pressure", NULL },
-    { "energy", "Energy Converter", "J · cal · kWh", "view-sort-ascending-symbolic", NULL, "energy", NULL },
+    { "temp_convert", "Temperature Converter", "C · F · K", "view-sort-ascending-symbolic", NULL, "temp", build_generic_math_tool },
+    { "currency", "Currency Converter", "Offline exchange rates", "view-sort-ascending-symbolic", NULL, "currency", build_generic_math_tool },
+    { "cooking", "Cooking Measure", "Cups · Spoons · Oz", "view-sort-ascending-symbolic", NULL, "cook", build_generic_math_tool },
+    { "data_size", "Data Size Converter", "B · KB · MB · GB", "drive-harddisk-symbolic", NULL, "datasize", build_generic_math_tool },
+    { "speed", "Speed Converter", "mph · km/h · m/s", "view-sort-ascending-symbolic", NULL, "speed", build_generic_math_tool },
+    { "pressure", "Pressure Converter", "bar · psi · Pa", "view-sort-ascending-symbolic", NULL, "pressure", build_generic_math_tool },
+    { "energy", "Energy Converter", "J · cal · kWh", "view-sort-ascending-symbolic", NULL, "energy", build_generic_math_tool },
     { .id = NULL }
 };
 
 static const HelvetiaTool tools_date[] = {
-    { "date_diff", "Date Difference", "Calculate days between dates", "x-office-calendar-symbolic", NULL, "datediff", NULL },
-    { "age_calc", "Age Calculator", "Calculate exact age", "x-office-calendar-symbolic", NULL, "age", NULL },
-    { "timezone", "Timezone Converter", "Compare time zones", "preferences-system-time-symbolic", NULL, "tz", NULL },
-    { "world_clock", "World Clock", "View multiple time zones", "preferences-system-time-symbolic", NULL, "clock", NULL },
-    { "unix_ts", "Unix Timestamp", "Epoch to human readable", "preferences-system-time-symbolic", NULL, "epoch", NULL },
-    { "cron_parse", "Cron Expression", "Parse crontab syntax", "preferences-system-time-symbolic", NULL, "cron", NULL },
-    { "duration", "Duration Calculator", "Add/subtract time", "preferences-system-time-symbolic", NULL, "duration", NULL },
-    { "week_num", "Week Number", "Find ISO week number", "x-office-calendar-symbolic", NULL, "week", NULL },
-    { "timer", "Countdown Timer", "Simple timer", "preferences-system-time-symbolic", NULL, "timer", NULL },
-    { "stopwatch", "Stopwatch", "Simple stopwatch", "preferences-system-time-symbolic", NULL, "stopwatch", NULL },
-    { "pomodoro", "Pomodoro Timer", "Focus sessions", "preferences-system-time-symbolic", NULL, "pomodoro", NULL },
+    { "date_diff", "Date Difference", "Calculate days between dates", "x-office-calendar-symbolic", NULL, "datediff", build_date_diff },
+    { "age_calc", "Age Calculator", "Calculate exact age", "x-office-calendar-symbolic", NULL, "age", build_coming_soon },
+    { "timezone", "Timezone Converter", "", "preferences-system-time-symbolic", NULL, "tz", build_timezone_studio },
+    { "world_clock", "World Clock", "View multiple time zones", "preferences-system-time-symbolic", NULL, "clock", build_coming_soon },
+    { "unix_ts", "Unix Timestamp", "Epoch to human readable", "preferences-system-time-symbolic", NULL, "epoch", build_unix_timestamp },
+    { "cron_parse", "Cron Expression", "Parse crontab syntax", "preferences-system-time-symbolic", NULL, "cron", build_coming_soon },
+    { "duration", "Duration Calculator", "Add/subtract time", "preferences-system-time-symbolic", NULL, "duration", build_coming_soon },
+    { "week_num", "Week Number", "Find ISO week number", "x-office-calendar-symbolic", NULL, "week", build_coming_soon },
+    { "timer", "Countdown Timer", "Simple timer", "preferences-system-time-symbolic", NULL, "timer", build_coming_soon },
+    { "stopwatch", "Stopwatch", "Simple stopwatch", "preferences-system-time-symbolic", NULL, "stopwatch", build_stopwatch },
+    { "pomodoro", "Pomodoro Timer", "Focus sessions", "preferences-system-time-symbolic", NULL, "pomodoro", build_coming_soon },
     { .id = NULL }
 };
 
 static const HelvetiaTool tools_color[] = {
-    { "color_picker", "Color Picker", "Screen color grabber", "color-select-symbolic", NULL, "picker", NULL },
-    { "color_convert", "Color Converter", "HEX ↔ RGB with preview", "color-select-symbolic", kw_color, "color", build_color_tool },
-    { "palette_gen", "Palette Generator", "Generate complementary colors", "color-select-symbolic", NULL, "palette", NULL },
-    { "contrast", "Contrast Checker", "WCAG AA / AAA score", "color-select-symbolic", NULL, "contrast", NULL },
-    { "gradient", "Gradient Generator", "CSS gradient builder", "color-select-symbolic", NULL, "gradient", NULL },
-    { "colorblind", "Color Blindness", "Simulate visual impairments", "color-select-symbolic", NULL, "colorblind", NULL },
+    { "color_picker", "Color Picker", "Screen color grabber", "color-select-symbolic", NULL, "picker", build_coming_soon },
+    { "color_convert", "Color Converter", "HEX ↔ RGB with preview", "color-select-symbolic", kw_color, "color", build_color_studio },
+    { "palette_gen", "Palette Generator", "Generate complementary colors", "color-select-symbolic", NULL, "palette", build_coming_soon },
+    { "contrast", "Contrast Checker", "WCAG AA / AAA score", "color-select-symbolic", NULL, "contrast", build_coming_soon },
+    { "gradient", "Gradient Generator", "CSS gradient builder", "color-select-symbolic", NULL, "gradient", build_coming_soon },
+    { "colorblind", "Color Blindness", "Simulate visual impairments", "color-select-symbolic", NULL, "colorblind", build_coming_soon },
     { .id = NULL }
 };
 
 static const HelvetiaTool tools_text[] = {
     { "case_convert", "Text Case Converter", "UPPER · lower · Title · sWAP", "format-text-direction-ltr-symbolic", kw_case, "case", build_case_tool },
-    { "word_count", "Word & Char Counter", "Count words and characters", "format-text-direction-ltr-symbolic", NULL, "wc", NULL },
-    { "text_diff", "Text Diff", "Compare two texts", "format-text-direction-ltr-symbolic", NULL, "diff", NULL },
-    { "text_sort", "Text Sorter", "Sort lines alphabetically", "view-sort-ascending-symbolic", NULL, "sort", NULL },
-    { "line_dedup", "Line Deduplicator", "Remove duplicate lines", "view-sort-ascending-symbolic", NULL, "dedup", NULL },
-    { "find_replace", "Find & Replace", "Regex supported replace", "edit-find-replace-symbolic", NULL, "replace", NULL },
-    { "regex_test", "Regex Tester", "Test regular expressions", "edit-find-symbolic", NULL, "regex", NULL },
-    { "lorem", "Lorem Ipsum", "Generate placeholder text", "format-text-direction-ltr-symbolic", NULL, "lorem", NULL },
-    { "text_rev", "Text Reverser", "Reverse strings", "format-text-direction-rtl-symbolic", NULL, "reverse", NULL },
-    { "trim", "Whitespace Trimmer", "Remove extra spaces", "format-text-direction-ltr-symbolic", NULL, "trim", NULL },
-    { "slug", "Slug Generator", "URL-friendly strings", "format-text-direction-ltr-symbolic", NULL, "slug", NULL },
-    { "md_preview", "Markdown Previewer", "Live markdown render", "text-html-symbolic", NULL, "md", NULL },
+    { "word_count", "Word & Char Counter", "Count words and characters", "format-text-direction-ltr-symbolic", NULL, "wc", build_word_counter },
+    { "text_diff", "Text Diff", "Compare two texts", "format-text-direction-ltr-symbolic", NULL, "diff", build_text_diff },
+    { "text_sort", "Text Sorter", "Sort lines alphabetically", "view-sort-ascending-symbolic", NULL, "sort", build_generic_text_tool },
+    { "line_dedup", "Line Deduplicator", "Remove duplicate lines", "view-sort-ascending-symbolic", NULL, "dedup", build_generic_text_tool },
+    { "find_replace", "Find & Replace", "Regex supported replace", "edit-find-replace-symbolic", NULL, "replace", build_generic_text_tool },
+    { "regex_test", "Regex Tester", "Test regular expressions", "edit-find-symbolic", NULL, "regex", build_regex_tester },
+    { "lorem", "Lorem Ipsum", "Generate placeholder text", "format-text-direction-ltr-symbolic", NULL, "lorem", build_lorem_ipsum },
+    { "text_rev", "Text Reverser", "Reverse strings", "format-text-direction-rtl-symbolic", NULL, "reverse", build_generic_text_tool },
+    { "trim", "Whitespace Trimmer", "Remove extra spaces", "format-text-direction-ltr-symbolic", NULL, "trim", build_generic_text_tool },
+    { "slug", "Slug Generator", "URL-friendly strings", "format-text-direction-ltr-symbolic", NULL, "slug", build_generic_text_tool },
+    { "md_preview", "Markdown Previewer", "Live markdown render", "text-html-symbolic", NULL, "md", build_generic_text_tool },
     { .id = NULL }
 };
 
 static const HelvetiaTool tools_gen[] = {
-    { "pass_gen", "Password Generator", "Secure random passwords", "dialog-password-symbolic", NULL, "pass", NULL },
-    { "phrase_gen", "Passphrase Generator", "Diceware style passphrases", "dialog-password-symbolic", NULL, "phrase", NULL },
+    { "pass_gen", "Password Generator", "Secure random passwords", "dialog-password-symbolic", NULL, "pass", build_password_generator },
+    { "phrase_gen", "Passphrase Generator", "Diceware style passphrases", "dialog-password-symbolic", NULL, "phrase", build_generic_random_tool },
     { "uuid_gen", "UUID Generator", "Random Version 4 UUIDs", "text-x-generic-symbolic", kw_uuid, "uuid", build_uuid_tool },
-    { "ulid_gen", "ULID Generator", "Lexicographically sortable", "text-x-generic-symbolic", NULL, "ulid", NULL },
-    { "nanoid", "NanoID Generator", "Tiny unique IDs", "text-x-generic-symbolic", NULL, "nanoid", NULL },
-    { "qr_gen", "QR Code Generator", "Text/URL to QR", "view-grid-symbolic", NULL, "qr", NULL },
-    { "barcode", "Barcode Generator", "Generate 1D barcodes", "view-grid-symbolic", NULL, "barcode", NULL },
+    { "ulid_gen", "ULID Generator", "Lexicographically sortable", "text-x-generic-symbolic", NULL, "ulid", build_generic_random_tool },
+    { "nanoid", "NanoID Generator", "Tiny unique IDs", "text-x-generic-symbolic", NULL, "nanoid", build_generic_random_tool },
+    { "qr_gen", "QR Code Generator", "Text/URL to QR", "view-grid-symbolic", NULL, "qr", build_qr_studio },
+    { "barcode", "Barcode Generator", "Generate 1D barcodes", "view-grid-symbolic", NULL, "barcode", build_generic_random_tool },
     { "hash_gen", "Hash Generator", "MD5 · SHA-1 · SHA-256 · SHA-512", "system-lock-screen-symbolic", kw_hash, "hash", build_hash_tool },
-    { "hmac", "HMAC Generator", "Keyed-hash message auth", "system-lock-screen-symbolic", NULL, "hmac", NULL },
+    { "hmac", "HMAC Generator", "Keyed-hash message auth", "system-lock-screen-symbolic", NULL, "hmac", build_generic_random_tool },
     { .id = NULL }
 };
 
 static const HelvetiaTool tools_everyday[] = {
-    { "notes", "Notes / Scratchpad", "Quick temporary notes", "accessories-text-editor-symbolic", NULL, "notes", NULL },
-    { "todo", "To-Do List", "Simple task list", "view-list-symbolic", NULL, "todo", NULL },
-    { "clipboard", "Clipboard Manager", "View clipboard history", "edit-paste-symbolic", NULL, "clipboard", NULL },
-    { "random_pick", "Random Picker", "Dice, coin, cards", "media-playlist-shuffle-symbolic", NULL, "pick", NULL },
-    { "bmi", "BMI Calculator", "Body mass index", "accessories-calculator-symbolic", NULL, "bmi", NULL },
-    { "tip_calc", "Tip Calculator", "Restaurant tip guide", "accessories-calculator-symbolic", NULL, "tipcalc", NULL },
+    { "notes", "Notes / Scratchpad", "Quick temporary notes", "accessories-text-editor-symbolic", NULL, "notes", build_coming_soon },
+    { "todo", "To-Do List", "Simple task list", "view-list-symbolic", NULL, "todo", build_coming_soon },
+    { "clipboard", "Clipboard Manager", "View clipboard history", "edit-paste-symbolic", NULL, "clipboard", build_coming_soon },
+    { "random_pick", "Random Picker", "Dice, coin, cards", "media-playlist-shuffle-symbolic", NULL, "pick", build_generic_random_tool },
+    { "bmi", "BMI Calculator", "Body mass index", "accessories-calculator-symbolic", NULL, "bmi", build_coming_soon },
+    { "tip_calc", "Tip Calculator", "Restaurant tip guide", "accessories-calculator-symbolic", NULL, "tipcalc", build_coming_soon },
     { .id = NULL }
 };
 
 static const HelvetiaSubcategory utility_subcategories[] = {
     { "Calculator & Math", tools_math },
+    { "Statistics", tools_statistics },
+    { "Geometry", tools_geometry },
     { "Units & Measures", tools_units },
     { "Date & Time", tools_date },
     { "Color", tools_color },
@@ -646,6 +584,17 @@ static const HelvetiaSubcategory utility_subcategories[] = {
 /* ================================================================
  * Custom Dashboard Layout (Helvetia Design)
  * ================================================================ */
+
+static void on_utility_card_clicked(GtkGestureClick *g, int n_press, double x, double y, gpointer data) {
+    (void)g; (void)n_press; (void)x; (void)y;
+    const HelvetiaTool *tool = data;
+    GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(g));
+    GtkWidget *win = gtk_widget_get_ancestor(widget, HELVETIA_TYPE_WINDOW);
+    if (win) {
+        helvetia_window_open_tool(HELVETIA_WINDOW(win), tool);
+    }
+}
+
 static GtkWidget *utility_create_view(void) {
     GtkWidget *paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_paned_set_wide_handle(GTK_PANED(paned), FALSE);
@@ -662,7 +611,7 @@ static GtkWidget *utility_create_view(void) {
     gtk_widget_set_halign(calc_header, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(left_box), calc_header);
     
-    GtkWidget *calc_widget = build_base_converter(); /* Using base converter as placeholder for the big calculator */
+    GtkWidget *calc_widget = build_calc_sci(); /* Using base converter as placeholder for the big calculator */
     gtk_box_append(GTK_BOX(left_box), calc_widget);
     
     gtk_paned_set_start_child(GTK_PANED(paned), left_box);
@@ -719,6 +668,12 @@ static GtkWidget *utility_create_view(void) {
         
         gtk_box_append(GTK_BOX(card), title);
         gtk_box_append(GTK_BOX(card), desc);
+        
+        GtkGesture *click = gtk_gesture_click_new();
+        g_signal_connect(click, "pressed", G_CALLBACK(on_utility_card_clicked), (gpointer)tools[i]);
+        gtk_widget_add_controller(card, GTK_EVENT_CONTROLLER(click));
+        gtk_widget_set_cursor_from_name(card, "pointer");
+        
         gtk_flow_box_insert(GTK_FLOW_BOX(flowbox), card, -1);
     }
     

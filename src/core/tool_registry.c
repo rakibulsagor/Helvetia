@@ -1,6 +1,5 @@
 #include "tool_registry.h"
 #include <string.h>
-#include <ctype.h>
 
 static GPtrArray *all_tools = NULL;
 
@@ -32,9 +31,10 @@ void helvetia_tool_registry_index_module(const HelvetiaModule *module) {
 }
 
 /* Simple case-insensitive substring search across name, desc, and keywords */
-GPtrArray *helvetia_tool_registry_search(const char *query) {
+GPtrArray *helvetia_tool_registry_search(const char *query, guint max_results) {
     GPtrArray *results = g_ptr_array_new();
     if (!all_tools || !query || !*query) return results;
+    if (max_results == 0) max_results = G_MAXUINT;
     
     char *lower_query = g_utf8_strdown(query, -1);
     
@@ -68,6 +68,7 @@ GPtrArray *helvetia_tool_registry_search(const char *query) {
         
         if (match) {
             g_ptr_array_add(results, (gpointer)tool);
+            if (results->len >= max_results) break;
         }
     }
     

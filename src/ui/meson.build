@@ -1,6 +1,7 @@
 ui_sources = files(
   'window.c',
-  'module_view.c'
+  'module_view.c',
+  'widgets.c'
 )
 
 ui_lib = static_library('helvetia_ui',

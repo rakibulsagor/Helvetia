@@ -1,4 +1,4 @@
-pdf_sources = files('pdf_module.c')
+pdf_sources = files('pdf_module.c', 'pdf_impl.c')
 
 pdf_lib = static_library('helvetia_pdf',
   pdf_sources,

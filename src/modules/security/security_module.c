@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 static const HelvetiaTool tools_encryption[] = {
-    { "file_encrypt", "File Encrypt", "AES-256, ChaCha20", "dialog-password-symbolic", (const char*[]){ "security", "file", "encrypt", NULL }, "file-encrypt", NULL },
+    { "file_encrypt", "File Encrypt", "AES-256, ChaCha20", "dialog-password-symbolic", (const char*[]){ "security", "file", "encrypt", NULL }, "file-encrypt", build_file_encrypt },
     { "file_decrypt", "File Decrypt", "File Decrypt", "dialog-password-symbolic", (const char*[]){ "security", "decrypt", "file", NULL }, "file-decrypt", NULL },
     { "folder_encrypt", "Folder Encrypt", "Folder Encrypt", "dialog-password-symbolic", (const char*[]){ "folder", "security", "encrypt", NULL }, "folder-encrypt", NULL },
     { "text_encrypt", "Text Encrypt", "Text Encrypt", "dialog-password-symbolic", (const char*[]){ "security", "text", "encrypt", NULL }, "text-encrypt", NULL },
@@ -18,10 +18,10 @@ static const HelvetiaTool tools_encryption[] = {
 };
 
 static const HelvetiaTool tools_hashing[] = {
-    { "file_hash_calculator", "File Hash Calculator", "File Hash Calculator", "document-properties-symbolic", (const char*[]){ "calculator", "security", "hash", "file", NULL }, "file-hash-calculator", NULL },
-    { "text_hash_calculator", "Text Hash Calculator", "Text Hash Calculator", "document-properties-symbolic", (const char*[]){ "calculator", "security", "hash", "text", NULL }, "text-hash-calculator", NULL },
+    { "file_hash_calculator", "File Hash Calculator", "File Hash Calculator", "document-properties-symbolic", (const char*[]){ "calculator", "security", "hash", "file", NULL }, "file-hash-calculator", build_file_hash_calculator },
+    { "text_hash_calculator", "Text Hash Calculator", "Text Hash Calculator", "document-properties-symbolic", (const char*[]){ "calculator", "security", "hash", "text", NULL }, "text-hash-calculator", build_text_hash_calculator },
     { "hash_verifier", "Hash Verifier", "Hash Verifier", "document-properties-symbolic", (const char*[]){ "verifier", "security", "hash", NULL }, "hash-verifier", NULL },
-    { "checksum_file_creator", "Checksum File Creator", "Checksum File Creator", "dialog-password-symbolic", (const char*[]){ "security", "creator", "checksum", "file", NULL }, "checksum-file-creator", NULL },
+    { "checksum_file_creator", "Checksum File Creator", "Checksum File Creator", "dialog-password-symbolic", (const char*[]){ "security", "creator", "checksum", "file", NULL }, "checksum-file-creator", build_checksum_creator },
     { "checksum_file_verifier", "Checksum File Verifier", "Checksum File Verifier", "dialog-password-symbolic", (const char*[]){ "verifier", "checksum", "file", "security", NULL }, "checksum-file-verifier", NULL },
     { "hmac_generator", "HMAC Generator", "HMAC Generator", "dialog-password-symbolic", (const char*[]){ "hmac", "security", "generator", NULL }, "hmac-generator", NULL },
     { NULL }
@@ -29,7 +29,7 @@ static const HelvetiaTool tools_hashing[] = {
 
 static const HelvetiaTool tools_password[] = {
     { "password_vault", "Password Vault", "SQLite, master password", "dialog-password-symbolic", (const char*[]){ "security", "vault", "password", NULL }, "password-vault", NULL },
-    { "password_strength_checker", "Password Strength Checker", "Password Strength Checker", "dialog-password-symbolic", (const char*[]){ "strength", "checker", "security", "password", NULL }, "password-strength-checker", NULL },
+    { "password_strength_checker", "Password Strength Checker", "Password Strength Checker", "dialog-password-symbolic", (const char*[]){ "strength", "checker", "security", "password", NULL }, "password-strength-checker", build_password_strength },
     { "password_breach_check", "Password Breach Check", "offline wordlist", "dialog-password-symbolic", (const char*[]){ "security", "password", "breach", "check", NULL }, "password-breach-check", NULL },
     { "password_generator", "Password Generator", "Password Generator", "dialog-password-symbolic", (const char*[]){ "generator", "security", "password", NULL }, "password-generator", NULL },
     { "passphrase_generator", "Passphrase Generator", "Passphrase Generator", "dialog-password-symbolic", (const char*[]){ "generator", "passphrase", "security", NULL }, "passphrase-generator", NULL },
@@ -38,7 +38,7 @@ static const HelvetiaTool tools_password[] = {
 };
 
 static const HelvetiaTool tools_privacy[] = {
-    { "secure_delete", "Secure Delete", "multi-pass shred", "edit-delete-symbolic", (const char*[]){ "secure", "security", "delete", NULL }, "secure-delete", NULL },
+    { "secure_delete", "Secure Delete", "multi-pass shred", "edit-delete-symbolic", (const char*[]){ "secure", "security", "delete", NULL }, "secure-delete", build_secure_delete },
     { "metadata_stripper", "Metadata Stripper", "images, PDFs, docs", "dialog-password-symbolic", (const char*[]){ "security", "stripper", "metadata", NULL }, "metadata-stripper", NULL },
     { "exif_remover", "EXIF Remover", "EXIF Remover", "dialog-password-symbolic", (const char*[]){ "security", "exif", "remover", NULL }, "exif-remover", NULL },
     { "steganography_encode", "Steganography Encode", "Steganography Encode", "dialog-password-symbolic", (const char*[]){ "security", "encode", "steganography", NULL }, "steganography-encode", NULL },
@@ -48,12 +48,12 @@ static const HelvetiaTool tools_privacy[] = {
 };
 
 static const HelvetiaTool tools_certificates[] = {
-    { "x_509_certificate_viewer", "X.509 Certificate Viewer", "X.509 Certificate Viewer", "network-server-symbolic", (const char*[]){ "security", "x509", "certificate", "viewer", NULL }, "x-509-certificate-viewer", NULL },
+    { "x_509_certificate_viewer", "X.509 Certificate Viewer", "X.509 Certificate Viewer", "network-server-symbolic", (const char*[]){ "security", "x509", "certificate", "viewer", NULL }, "x-509-certificate-viewer", build_cert_viewer },
     { "certificate_chain_verifier", "Certificate Chain Verifier", "Certificate Chain Verifier", "network-server-symbolic", (const char*[]){ "verifier", "security", "certificate", "chain", NULL }, "certificate-chain-verifier", NULL },
     { "csr_generator", "CSR Generator", "CSR Generator", "dialog-password-symbolic", (const char*[]){ "generator", "security", "csr", NULL }, "csr-generator", NULL },
     { "self_signed_certificate_generator", "Self-signed Certificate Generator", "Self-signed Certificate Generator", "network-server-symbolic", (const char*[]){ "selfsigned", "security", "generator", "certificate", NULL }, "self-signed-certificate-generator", NULL },
     { "key_pair_generator", "Key Pair Generator", "RSA, ECDSA, Ed25519", "network-server-symbolic", (const char*[]){ "generator", "security", "pair", "key", NULL }, "key-pair-generator", NULL },
-    { "ssh_key_generator", "SSH Key Generator", "SSH Key Generator", "network-server-symbolic", (const char*[]){ "generator", "security", "ssh", "key", NULL }, "ssh-key-generator", NULL },
+    { "ssh_key_generator", "SSH Key Generator", "SSH Key Generator", "network-server-symbolic", (const char*[]){ "generator", "security", "ssh", "key", NULL }, "ssh-key-generator", build_ssh_keygen },
     { "ssh_key_inspector", "SSH Key Inspector", "SSH Key Inspector", "network-server-symbolic", (const char*[]){ "security", "inspector", "ssh", "key", NULL }, "ssh-key-inspector", NULL },
     { NULL }
 };

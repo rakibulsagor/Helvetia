@@ -233,3 +233,52 @@ scrollbar slider:hover {
 paned > separator {
     background-color: rgba(255,255,255,0.06);
 }
+
+/* ================================================================
+ * Phase 2 additions
+ * ================================================================ */
+
+.helvetia-section-header {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+.helvetia-badge-ready {
+    font-size: 10px;
+    color: #22c55e;
+    margin-top: 4px;
+}
+
+.helvetia-topbar {
+    background-color: #1c1c1e;
+    border-bottom: 1px solid #2d2d30;
+    min-height: 48px;
+}
+
+.helvetia-result {
+    font-family: monospace;
+    font-size: 13px;
+    color: #e5e7eb;
+    background-color: #0d0d0f;
+    border-radius: 6px;
+    padding: 10px 12px;
+    border: 1px solid #2d2d30;
+}
+
+/* Responsive card hover */
+.helvetia-card:hover {
+    background-color: #2a2a2d;
+    border-color: #ef4444;
+    transform: translateY(-1px);
+    transition: all 0.15s ease;
+}
+
+/* Search results */
+.helvetia-nav row:hover {
+    background-color: #2a2a2d;
+}

@@ -1,4 +1,4 @@
-images_sources = files('images_module.c')
+images_sources = files('images_module.c', 'images_impl.c')
 
 images_lib = static_library('helvetia_images',
   images_sources,

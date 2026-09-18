@@ -15,8 +15,8 @@ static const HelvetiaTool tools_viewing_navigation[] = {
 };
 
 static const HelvetiaTool tools_organizing[] = {
-    { "merge_pdfs", "Merge PDFs", "Merge PDFs", "list-add-symbolic", (const char*[]){ "pdfs", "merge", "pdf", NULL }, "merge-pdfs", NULL },
-    { "split_pdf", "Split PDF", "Split PDF", "list-remove-symbolic", (const char*[]){ "split", "pdf", NULL }, "split-pdf", NULL },
+    { "merge_pdfs", "Merge PDFs", "Merge PDFs", "list-add-symbolic", (const char*[]){ "pdfs", "merge", "pdf", NULL }, "merge-pdfs", build_pdf_merge },
+    { "split_pdf", "Split PDF", "Split PDF", "list-remove-symbolic", (const char*[]){ "split", "pdf", NULL }, "split-pdf", build_pdf_split },
     { "extract_pages", "Extract Pages", "Extract Pages", "application-pdf-symbolic", (const char*[]){ "extract", "pages", "pdf", NULL }, "extract-pages", NULL },
     { "delete_pages", "Delete Pages", "Delete Pages", "application-pdf-symbolic", (const char*[]){ "pages", "delete", "pdf", NULL }, "delete-pages", NULL },
     { "reorder_pages", "Reorder Pages", "Reorder Pages", "application-pdf-symbolic", (const char*[]){ "pages", "pdf", "reorder", NULL }, "reorder-pages", NULL },
@@ -64,9 +64,9 @@ static const HelvetiaTool tools_optimization[] = {
 };
 
 static const HelvetiaTool tools_conversion[] = {
-    { "pdf_to_image", "PDF to Image", "PNG, JPG, TIFF, WEBP", "application-pdf-symbolic", (const char*[]){ "image", "pdf", NULL }, "pdf2image", NULL },
+    { "pdf_to_image", "PDF to Image", "PNG, JPG, TIFF, WEBP", "application-pdf-symbolic", (const char*[]){ "image", "pdf", NULL }, "pdf2image", build_pdf_to_image },
     { "image_to_pdf", "Image to PDF", "Image to PDF", "application-pdf-symbolic", (const char*[]){ "image", "pdf", NULL }, "image2pdf", NULL },
-    { "pdf_to_text", "PDF to Text", "PDF to Text", "application-pdf-symbolic", (const char*[]){ "text", "pdf", NULL }, "pdf2text", NULL },
+    { "pdf_to_text", "PDF to Text", "PDF to Text", "application-pdf-symbolic", (const char*[]){ "text", "pdf", NULL }, "pdf2text", build_pdf_to_text },
     { "pdf_to_html", "PDF to HTML", "PDF to HTML", "application-pdf-symbolic", (const char*[]){ "html", "pdf", NULL }, "pdf2html", NULL },
     { "pdf_to_docx", "PDF to DOCX", "PDF to DOCX", "application-pdf-symbolic", (const char*[]){ "docx", "pdf", NULL }, "pdf2docx", NULL },
     { "pdf_to_xlsx", "PDF to XLSX", "PDF to XLSX", "application-pdf-symbolic", (const char*[]){ "xlsx", "pdf", NULL }, "pdf2xlsx", NULL },

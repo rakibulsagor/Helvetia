@@ -19,7 +19,7 @@ static const HelvetiaTool tools_archives[] = {
 };
 
 static const HelvetiaTool tools_data_formats[] = {
-    { "json_formatter", "JSON Formatter", "JSON Formatter", "view-refresh-symbolic", (const char*[]){ "convert", "json", "formatter", NULL }, "json-formatter", NULL },
+    { "json_formatter", "JSON Formatter", "JSON Formatter", "view-refresh-symbolic", (const char*[]){ "convert", "json", "formatter", NULL }, "json-formatter", build_json_formatter },
     { "json_validator", "JSON Validator", "JSON Validator", "view-refresh-symbolic", (const char*[]){ "validator", "json", "convert", NULL }, "json-validator", NULL },
     { "json_to_yaml", "JSON to YAML", "JSON to YAML", "view-refresh-symbolic", (const char*[]){ "convert", "json", "yaml", NULL }, "json2yaml", NULL },
     { "yaml_to_json", "YAML to JSON", "YAML to JSON", "view-refresh-symbolic", (const char*[]){ "convert", "json", "yaml", NULL }, "yaml2json", NULL },
@@ -38,14 +38,14 @@ static const HelvetiaTool tools_data_formats[] = {
 };
 
 static const HelvetiaTool tools_encoding[] = {
-    { "base64_encode", "Base64 Encode", "Base64 Encode", "accessories-character-map-symbolic", (const char*[]){ "convert", "base64", "encode", NULL }, "base64-encode", NULL },
-    { "base64_decode", "Base64 Decode", "Base64 Decode", "accessories-character-map-symbolic", (const char*[]){ "convert", "decode", "base64", NULL }, "base64-decode", NULL },
-    { "url_encode_decode", "URL Encode / Decode", "URL Encode / Decode", "accessories-character-map-symbolic", (const char*[]){ "convert", "encode", "decode", "url", NULL }, "url-encode-decode", NULL },
+    { "base64_encode", "Base64 Encode", "Base64 Encode", "accessories-character-map-symbolic", (const char*[]){ "convert", "base64", "encode", NULL }, "base64-encode", build_base64_tool },
+    { "base64_decode", "Base64 Decode", "Base64 Decode", "accessories-character-map-symbolic", (const char*[]){ "convert", "decode", "base64", NULL }, "base64-decode", build_base64_tool },
+    { "url_encode_decode", "URL Encode / Decode", "URL Encode / Decode", "accessories-character-map-symbolic", (const char*[]){ "convert", "encode", "decode", "url", NULL }, "url-encode-decode", build_url_encoder },
     { "html_entity_encode_decode", "HTML Entity Encode / Decode", "HTML Entity Encode / Decode", "accessories-character-map-symbolic", (const char*[]){ "convert", "decode", "html", "entity", "encode", NULL }, "html-entity-encode-decode", NULL },
-    { "hex_encode_decode", "Hex Encode / Decode", "Hex Encode / Decode", "accessories-character-map-symbolic", (const char*[]){ "convert", "hex", "decode", "encode", NULL }, "hex-encode-decode", NULL },
+    { "hex_encode_decode", "Hex Encode / Decode", "Hex Encode / Decode", "accessories-character-map-symbolic", (const char*[]){ "convert", "hex", "decode", "encode", NULL }, "hex-encode-decode", build_hex_encoder },
     { "binary_encode_decode", "Binary Encode / Decode", "Binary Encode / Decode", "accessories-character-map-symbolic", (const char*[]){ "binary", "convert", "decode", "encode", NULL }, "binary-encode-decode", NULL },
     { "unicode_escape_unescape", "Unicode Escape / Unescape", "Unicode Escape / Unescape", "accessories-character-map-symbolic", (const char*[]){ "unicode", "convert", "unescape", "escape", NULL }, "unicode-escape-unescape", NULL },
-    { "rot13", "ROT13", "ROT13", "view-refresh-symbolic", (const char*[]){ "rot13", "convert", NULL }, "rot13", NULL },
+    { "rot13", "ROT13", "ROT13", "view-refresh-symbolic", (const char*[]){ "rot13", "convert", NULL }, "rot13", build_rot13 },
     { "morse_code", "Morse Code", "Morse Code", "accessories-character-map-symbolic", (const char*[]){ "convert", "code", "morse", NULL }, "morse-code", NULL },
     { "nato_alphabet", "NATO Alphabet", "NATO Alphabet", "view-refresh-symbolic", (const char*[]){ "nato", "convert", "alphabet", NULL }, "nato-alphabet", NULL },
     { NULL }
@@ -53,7 +53,7 @@ static const HelvetiaTool tools_encoding[] = {
 
 static const HelvetiaTool tools_charset[] = {
     { "character_encoding_converter", "Character Encoding Converter", "UTF-8, UTF-16, ISO-8859, Shift-JIS, GBK, KOI8", "view-refresh-symbolic", (const char*[]){ "convert", "encoding", "converter", "character", NULL }, "character-encoding-converter", NULL },
-    { "line_ending_converter", "Line Ending Converter", "LF, CRLF, CR", "view-refresh-symbolic", (const char*[]){ "line", "convert", "ending", "converter", NULL }, "line-ending-converter", NULL },
+    { "line_ending_converter", "Line Ending Converter", "LF, CRLF, CR", "view-refresh-symbolic", (const char*[]){ "line", "convert", "ending", "converter", NULL }, "line-ending-converter", build_line_ending_converter },
     { "bom_add_remove", "BOM Add / Remove", "BOM Add / Remove", "view-refresh-symbolic", (const char*[]){ "remove", "convert", "add", "bom", NULL }, "bom-add-remove", NULL },
     { NULL }
 };
@@ -62,7 +62,7 @@ static const HelvetiaTool tools_universal[] = {
     { "universal_file_converter", "Universal File Converter", "any → any supported", "view-refresh-symbolic", (const char*[]){ "universal", "convert", "converter", "file", NULL }, "universal-file-converter", NULL },
     { "batch_converter", "Batch Converter", "Batch Converter", "view-refresh-symbolic", (const char*[]){ "batch", "convert", "converter", NULL }, "batch-converter", NULL },
     { "file_format_inspector", "File Format Inspector", "File Format Inspector", "view-refresh-symbolic", (const char*[]){ "format", "convert", "inspector", "file", NULL }, "file-format-inspector", NULL },
-    { "file_type_detector", "File Type Detector", "libmagic", "view-refresh-symbolic", (const char*[]){ "type", "detector", "convert", "file", NULL }, "file-type-detector", NULL },
+    { "file_type_detector", "File Type Detector", "libmagic", "view-refresh-symbolic", (const char*[]){ "type", "detector", "convert", "file", NULL }, "file-type-detector", build_file_type_detector },
     { "file_splitter_joiner", "File Splitter / Joiner", "File Splitter / Joiner", "view-refresh-symbolic", (const char*[]){ "joiner", "splitter", "convert", "file", NULL }, "file-splitter-joiner", NULL },
     { "file_renamer", "File Renamer", "batch, regex", "view-refresh-symbolic", (const char*[]){ "convert", "file", "renamer", NULL }, "file-renamer", NULL },
     { "file_timestamp_editor", "File Timestamp Editor", "File Timestamp Editor", "view-refresh-symbolic", (const char*[]){ "convert", "editor", "timestamp", "file", NULL }, "file-timestamp-editor", NULL },

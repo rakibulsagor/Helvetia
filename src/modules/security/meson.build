@@ -1,4 +1,4 @@
-security_sources = files('security_module.c')
+security_sources = files('security_module.c', 'security_impl.c')
 
 security_lib = static_library('helvetia_security',
   security_sources,

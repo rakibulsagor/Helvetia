@@ -8,7 +8,7 @@
 static const HelvetiaTool tools_encoding_formats[] = {
     { "base64_tool", "Base64 Tool", "Base64 Tool", "applications-development-symbolic", (const char*[]){ "devtools", "base64", "tool", NULL }, "base64-tool", NULL },
     { "url_encoder", "URL Encoder", "URL Encoder", "applications-development-symbolic", (const char*[]){ "devtools", "encoder", "url", NULL }, "url-encoder", NULL },
-    { "jwt_decoder", "JWT Decoder", "JWT Decoder", "applications-development-symbolic", (const char*[]){ "devtools", "jwt", "decoder", NULL }, "jwt-decoder", NULL },
+    { "jwt_decoder", "JWT Decoder", "JWT Decoder", "applications-development-symbolic", (const char*[]){ "devtools", "jwt", "decoder", NULL }, "jwt-decoder", build_jwt_decoder },
     { "jwt_encoder", "JWT Encoder", "JWT Encoder", "applications-development-symbolic", (const char*[]){ "devtools", "encoder", "jwt", NULL }, "jwt-encoder", NULL },
     { "uuid_ulid_nanoid_generator", "UUID / ULID / NanoID Generator", "UUID / ULID / NanoID Generator", "applications-development-symbolic", (const char*[]){ "generator", "nanoid", "devtools", "uuid", "ulid", NULL }, "uuid-ulid-nanoid-generator", NULL },
     { "hash_tool", "Hash Tool", "Hash Tool", "applications-development-symbolic", (const char*[]){ "devtools", "hash", "tool", NULL }, "hash-tool", NULL },
@@ -43,10 +43,10 @@ static const HelvetiaTool tools_text_regex[] = {
 };
 
 static const HelvetiaTool tools_time_numbers[] = {
-    { "unix_timestamp_converter", "Unix Timestamp Converter", "Unix Timestamp Converter", "applications-development-symbolic", (const char*[]){ "converter", "timestamp", "devtools", "unix", NULL }, "unix-timestamp-converter", NULL },
+    { "unix_timestamp_converter", "Unix Timestamp Converter", "Unix Timestamp Converter", "applications-development-symbolic", (const char*[]){ "converter", "timestamp", "devtools", "unix", NULL }, "unix-timestamp-converter", build_dev_timestamp },
     { "iso_8601_converter", "ISO 8601 Converter", "ISO 8601 Converter", "applications-development-symbolic", (const char*[]){ "iso", "devtools", "converter", "8601", NULL }, "iso-8601-converter", NULL },
     { "cron_parser", "Cron Parser", "Cron Parser", "applications-development-symbolic", (const char*[]){ "parser", "devtools", "cron", NULL }, "cron-parser", NULL },
-    { "number_base_converter", "Number Base Converter", "Number Base Converter", "applications-development-symbolic", (const char*[]){ "devtools", "converter", "base", "number", NULL }, "number-base-converter", NULL },
+    { "number_base_converter", "Number Base Converter", "Number Base Converter", "applications-development-symbolic", (const char*[]){ "devtools", "converter", "base", "number", NULL }, "number-base-converter", build_number_base_dev },
     { "bitwise_calculator", "Bitwise Calculator", "Bitwise Calculator", "applications-development-symbolic", (const char*[]){ "calculator", "devtools", "bitwise", NULL }, "bitwise-calculator", NULL },
     { "byte_size_converter", "Byte Size Converter", "Byte Size Converter", "applications-development-symbolic", (const char*[]){ "devtools", "byte", "converter", "size", NULL }, "byte-size-converter", NULL },
     { "random_data_generator", "Random Data Generator", "Random Data Generator", "applications-development-symbolic", (const char*[]){ "generator", "random", "devtools", "data", NULL }, "random-data-generator", NULL },
@@ -58,7 +58,7 @@ static const HelvetiaTool tools_network_web[] = {
     { "url_parser", "URL Parser", "URL Parser", "applications-development-symbolic", (const char*[]){ "parser", "devtools", "url", NULL }, "url-parser", NULL },
     { "user_agent_parser", "User-Agent Parser", "User-Agent Parser", "applications-development-symbolic", (const char*[]){ "parser", "useragent", "devtools", NULL }, "user-agent-parser", NULL },
     { "mime_type_lookup", "MIME Type Lookup", "MIME Type Lookup", "applications-development-symbolic", (const char*[]){ "type", "devtools", "mime", "lookup", NULL }, "mime-type-lookup", NULL },
-    { "http_status_code_lookup", "HTTP Status Code Lookup", "HTTP Status Code Lookup", "applications-development-symbolic", (const char*[]){ "http", "devtools", "code", "lookup", "status", NULL }, "http-status-code-lookup", NULL },
+    { "http_status_code_lookup", "HTTP Status Code Lookup", "HTTP Status Code Lookup", "applications-development-symbolic", (const char*[]){ "http", "devtools", "code", "lookup", "status", NULL }, "http-status-code-lookup", build_http_status_lookup },
     { "cidr_calculator", "CIDR Calculator", "CIDR Calculator", "applications-development-symbolic", (const char*[]){ "calculator", "cidr", "devtools", NULL }, "cidr-calculator", NULL },
     { "ipv4_ipv6_converter", "IPv4 / IPv6 Converter", "IPv4 / IPv6 Converter", "network-wired-symbolic", (const char*[]){ "ipv4", "ipv6", "devtools", "converter", NULL }, "ipv4-ipv6-converter", NULL },
     { NULL }
@@ -69,7 +69,7 @@ static const HelvetiaTool tools_code_files[] = {
     { "code_minifier", "Code Minifier", "Code Minifier", "applications-development-symbolic", (const char*[]){ "minifier", "code", "devtools", NULL }, "code-minifier", NULL },
     { "diff_viewer", "Diff Viewer", "Diff Viewer", "applications-development-symbolic", (const char*[]){ "devtools", "viewer", "diff", NULL }, "diff-viewer", NULL },
     { "file_type_detector", "File Type Detector", "File Type Detector", "applications-development-symbolic", (const char*[]){ "type", "detector", "devtools", "file", NULL }, "file-type-detector", NULL },
-    { "hex_viewer", "Hex Viewer", "Hex Viewer", "applications-development-symbolic", (const char*[]){ "hex", "devtools", "viewer", NULL }, "hex-viewer", NULL },
+    { "hex_viewer", "Hex Viewer", "Hex Viewer", "applications-development-symbolic", (const char*[]){ "hex", "devtools", "viewer", NULL }, "hex-viewer", build_hex_viewer },
     { "binary_viewer", "Binary Viewer", "Binary Viewer", "applications-development-symbolic", (const char*[]){ "binary", "devtools", "viewer", NULL }, "binary-viewer", NULL },
     { "file_checksum", "File Checksum", "File Checksum", "applications-development-symbolic", (const char*[]){ "checksum", "devtools", "file", NULL }, "file-checksum", NULL },
     { "line_ending_converter", "Line Ending Converter", "Line Ending Converter", "applications-development-symbolic", (const char*[]){ "line", "ending", "devtools", "converter", NULL }, "line-ending-converter", NULL },
@@ -77,7 +77,7 @@ static const HelvetiaTool tools_code_files[] = {
 };
 
 static const HelvetiaTool tools_generators[] = {
-    { "uuid_generator", "UUID Generator", "UUID Generator", "applications-development-symbolic", (const char*[]){ "uuid", "generator", "devtools", NULL }, "uuid-generator", NULL },
+    { "uuid_generator", "UUID Generator", "UUID Generator", "applications-development-symbolic", (const char*[]){ "uuid", "generator", "devtools", NULL }, "uuid-generator", build_uuid_generator },
     { "password_generator", "Password Generator", "Password Generator", "applications-development-symbolic", (const char*[]){ "generator", "devtools", "password", NULL }, "password-generator", NULL },
     { "lorem_ipsum_generator", "Lorem Ipsum Generator", "Lorem Ipsum Generator", "network-wired-symbolic", (const char*[]){ "ipsum", "generator", "lorem", "devtools", NULL }, "lorem-ipsum-generator", NULL },
     { "dummy_json_generator", "Dummy JSON Generator", "Dummy JSON Generator", "text-x-script-symbolic", (const char*[]){ "generator", "json", "devtools", "dummy", NULL }, "dummy-json-generator", NULL },

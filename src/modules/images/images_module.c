@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 static const HelvetiaTool tools_viewing[] = {
-    { "image_viewer", "Image Viewer", "Image Viewer", "eog-symbolic", (const char*[]){ "image", "viewer", "images", NULL }, "image-viewer", NULL },
+    { "image_viewer", "Image Viewer", "Image Viewer", "eog-symbolic", (const char*[]){ "image", "viewer", "images", NULL }, "image-viewer", build_image_viewer },
     { "image_slideshow", "Image Slideshow", "Image Slideshow", "image-x-generic-symbolic", (const char*[]){ "image", "images", "slideshow", NULL }, "image-slideshow", NULL },
     { "image_thumbnail_grid", "Image Thumbnail Grid", "Image Thumbnail Grid", "image-x-generic-symbolic", (const char*[]){ "thumbnail", "image", "images", "grid", NULL }, "image-thumbnail-grid", NULL },
     { "exif_viewer", "EXIF Viewer", "EXIF Viewer", "eog-symbolic", (const char*[]){ "exif", "viewer", "images", NULL }, "exif-viewer", NULL },
@@ -16,7 +16,7 @@ static const HelvetiaTool tools_viewing[] = {
 
 static const HelvetiaTool tools_basic_editing[] = {
     { "crop", "Crop", "Crop", "crop-symbolic", (const char*[]){ "crop", "images", NULL }, "crop", NULL },
-    { "resize", "Resize", "Resize", "image-x-generic-symbolic", (const char*[]){ "resize", "images", NULL }, "resize", NULL },
+    { "resize", "Resize", "Resize", "image-x-generic-symbolic", (const char*[]){ "resize", "images", NULL }, "resize", build_image_resize },
     { "rotate", "Rotate", "Rotate", "image-x-generic-symbolic", (const char*[]){ "rotate", "images", NULL }, "rotate", NULL },
     { "flip", "Flip", "Flip", "image-x-generic-symbolic", (const char*[]){ "flip", "images", NULL }, "flip", NULL },
     { "straighten", "Straighten", "Straighten", "image-x-generic-symbolic", (const char*[]){ "images", "straighten", NULL }, "straighten", NULL },
@@ -49,8 +49,8 @@ static const HelvetiaTool tools_filters[] = {
     { "noise_reduction", "Noise Reduction", "Noise Reduction", "image-x-generic-symbolic", (const char*[]){ "noise", "images", "reduction", NULL }, "noise-reduction", NULL },
     { "denoise", "Denoise", "Denoise", "image-x-generic-symbolic", (const char*[]){ "denoise", "images", NULL }, "denoise", NULL },
     { "sepia", "Sepia", "Sepia", "image-x-generic-symbolic", (const char*[]){ "images", "sepia", NULL }, "sepia", NULL },
-    { "grayscale", "Grayscale", "Grayscale", "image-x-generic-symbolic", (const char*[]){ "grayscale", "images", NULL }, "grayscale", NULL },
-    { "invert", "Invert", "Invert", "image-x-generic-symbolic", (const char*[]){ "invert", "images", NULL }, "invert", NULL },
+    { "grayscale", "Grayscale", "Grayscale", "image-x-generic-symbolic", (const char*[]){ "grayscale", "images", NULL }, "grayscale", build_image_grayscale },
+    { "invert", "Invert", "Invert", "image-x-generic-symbolic", (const char*[]){ "invert", "images", NULL }, "invert", build_image_invert },
     { "posterize", "Posterize", "Posterize", "image-x-generic-symbolic", (const char*[]){ "images", "posterize", NULL }, "posterize", NULL },
     { "threshold", "Threshold", "Threshold", "image-x-generic-symbolic", (const char*[]){ "threshold", "images", NULL }, "threshold", NULL },
     { "vignette", "Vignette", "Vignette", "image-x-generic-symbolic", (const char*[]){ "images", "vignette", NULL }, "vignette", NULL },
@@ -119,7 +119,7 @@ static const HelvetiaTool tools_composition[] = {
 };
 
 static const HelvetiaTool tools_format_conversion[] = {
-    { "format_converter", "Format Converter", "PNG, JPG, WEBP, AVIF, HEIC, TIFF, BMP, GIF, SVG, ICO", "image-x-generic-symbolic", (const char*[]){ "format", "converter", "images", NULL }, "format-converter", NULL },
+    { "format_converter", "Format Converter", "PNG, JPG, WEBP, AVIF, HEIC, TIFF, BMP, GIF, SVG, ICO", "image-x-generic-symbolic", (const char*[]){ "format", "converter", "images", NULL }, "format-converter", build_image_converter },
     { "batch_convert", "Batch Convert", "Batch Convert", "image-x-generic-symbolic", (const char*[]){ "batch", "convert", "images", NULL }, "batch-convert", NULL },
     { "heic_to_jpg", "HEIC to JPG", "HEIC to JPG", "image-x-generic-symbolic", (const char*[]){ "heic", "images", "jpg", NULL }, "heic2jpg", NULL },
     { "raw_to_jpg", "RAW to JPG", "LibRaw", "image-x-generic-symbolic", (const char*[]){ "images", "raw", "jpg", NULL }, "raw2jpg", NULL },

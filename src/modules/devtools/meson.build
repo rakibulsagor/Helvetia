@@ -1,4 +1,4 @@
-devtools_sources = files('devtools_module.c')
+devtools_sources = files('devtools_module.c', 'devtools_impl.c')
 
 devtools_lib = static_library('helvetia_devtools',
   devtools_sources,
