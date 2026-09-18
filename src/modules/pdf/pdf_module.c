@@ -6,8 +6,8 @@
 #include <stddef.h>
 
 static const HelvetiaTool tools_viewing_navigation[] = {
-    { "pdf_viewer", "PDF Viewer", "PDF Viewer", "application-pdf-symbolic", (const char*[]){ "viewer", "pdf", NULL }, "pdf-viewer", NULL },
-    { "page_thumbnails", "Page Thumbnails", "Page Thumbnails", "application-pdf-symbolic", (const char*[]){ "pdf", "page", "thumbnails", NULL }, "page-thumbnails", NULL },
+    { "pdf_viewer", "PDF Viewer", "PDF Viewer", "application-pdf-symbolic", (const char*[]){ "viewer", "pdf", NULL }, "pdf-viewer", build_pdf_viewer },
+    { "page_thumbnails", "Page Thumbnails", "Page Thumbnails", "application-pdf-symbolic", (const char*[]){ "pdf", "page", "thumbnails", NULL }, "page-thumbnails", build_pdf_thumbnails },
     { "pdf_search", "PDF Search", "PDF Search", "system-search-symbolic", (const char*[]){ "search", "pdf", NULL }, "pdf-search", NULL },
     { "pdf_outline_bookmarks", "PDF Outline / Bookmarks", "PDF Outline / Bookmarks", "application-pdf-symbolic", (const char*[]){ "bookmarks", "outline", "pdf", NULL }, "pdf-outline-bookmarks", NULL },
     { "pdf_metadata_viewer", "PDF Metadata Viewer", "PDF Metadata Viewer", "application-pdf-symbolic", (const char*[]){ "viewer", "metadata", "pdf", NULL }, "pdf-metadata-viewer", NULL },
@@ -17,10 +17,10 @@ static const HelvetiaTool tools_viewing_navigation[] = {
 static const HelvetiaTool tools_organizing[] = {
     { "merge_pdfs", "Merge PDFs", "Merge PDFs", "list-add-symbolic", (const char*[]){ "pdfs", "merge", "pdf", NULL }, "merge-pdfs", build_pdf_merge },
     { "split_pdf", "Split PDF", "Split PDF", "list-remove-symbolic", (const char*[]){ "split", "pdf", NULL }, "split-pdf", build_pdf_split },
-    { "extract_pages", "Extract Pages", "Extract Pages", "application-pdf-symbolic", (const char*[]){ "extract", "pages", "pdf", NULL }, "extract-pages", NULL },
-    { "delete_pages", "Delete Pages", "Delete Pages", "application-pdf-symbolic", (const char*[]){ "pages", "delete", "pdf", NULL }, "delete-pages", NULL },
+    { "extract_pages", "Extract Pages", "Extract Pages", "application-pdf-symbolic", (const char*[]){ "extract", "pages", "pdf", NULL }, "extract-pages", build_pdf_extract },
+    { "delete_pages", "Delete Pages", "Delete Pages", "application-pdf-symbolic", (const char*[]){ "pages", "delete", "pdf", NULL }, "delete-pages", build_pdf_delete },
     { "reorder_pages", "Reorder Pages", "Reorder Pages", "application-pdf-symbolic", (const char*[]){ "pages", "pdf", "reorder", NULL }, "reorder-pages", NULL },
-    { "rotate_pages", "Rotate Pages", "Rotate Pages", "application-pdf-symbolic", (const char*[]){ "pages", "rotate", "pdf", NULL }, "rotate-pages", NULL },
+    { "rotate_pages", "Rotate Pages", "Rotate Pages", "application-pdf-symbolic", (const char*[]){ "pages", "rotate", "pdf", NULL }, "rotate-pages", build_pdf_rotate },
     { "insert_pages", "Insert Pages", "Insert Pages", "application-pdf-symbolic", (const char*[]){ "insert", "pages", "pdf", NULL }, "insert-pages", NULL },
     { "duplicate_pages", "Duplicate Pages", "Duplicate Pages", "application-pdf-symbolic", (const char*[]){ "pages", "pdf", "duplicate", NULL }, "duplicate-pages", NULL },
     { "reverse_page_order", "Reverse Page Order", "Reverse Page Order", "application-pdf-symbolic", (const char*[]){ "pdf", "page", "reverse", "order", NULL }, "reverse-page-order", NULL },
@@ -46,8 +46,8 @@ static const HelvetiaTool tools_editing[] = {
 };
 
 static const HelvetiaTool tools_security[] = {
-    { "pdf_encrypt", "PDF Encrypt", "password", "dialog-password-symbolic", (const char*[]){ "pdf", "encrypt", NULL }, "pdf-encrypt", NULL },
-    { "pdf_decrypt", "PDF Decrypt", "PDF Decrypt", "application-pdf-symbolic", (const char*[]){ "decrypt", "pdf", NULL }, "pdf-decrypt", NULL },
+    { "pdf_encrypt", "PDF Encrypt", "password", "dialog-password-symbolic", (const char*[]){ "pdf", "encrypt", NULL }, "pdf-encrypt", build_pdf_encrypt },
+    { "pdf_decrypt", "PDF Decrypt", "PDF Decrypt", "application-pdf-symbolic", (const char*[]){ "decrypt", "pdf", NULL }, "pdf-decrypt", build_pdf_decrypt },
     { "pdf_permissions", "PDF Permissions", "print, copy, edit", "application-pdf-symbolic", (const char*[]){ "permissions", "pdf", NULL }, "pdf-permissions", NULL },
     { "pdf_certificate_sign", "PDF Certificate Sign", "PDF Certificate Sign", "application-pdf-symbolic", (const char*[]){ "sign", "certificate", "pdf", NULL }, "pdf-certificate-sign", NULL },
     { "pdf_timestamp", "PDF Timestamp", "PDF Timestamp", "application-pdf-symbolic", (const char*[]){ "timestamp", "pdf", NULL }, "pdf-timestamp", NULL },
@@ -55,7 +55,7 @@ static const HelvetiaTool tools_security[] = {
 };
 
 static const HelvetiaTool tools_optimization[] = {
-    { "pdf_compress", "PDF Compress", "PDF Compress", "application-pdf-symbolic", (const char*[]){ "compress", "pdf", NULL }, "pdf-compress", NULL },
+    { "pdf_compress", "PDF Compress", "PDF Compress", "application-pdf-symbolic", (const char*[]){ "compress", "pdf", NULL }, "pdf-compress", build_pdf_compress },
     { "pdf_optimize_for_web", "PDF Optimize for Web", "PDF Optimize for Web", "application-pdf-symbolic", (const char*[]){ "web", "for", "pdf", "optimize", NULL }, "pdf-optimize-for-web", NULL },
     { "pdf_optimize_for_print", "PDF Optimize for Print", "PDF Optimize for Print", "printer-symbolic", (const char*[]){ "for", "print", "pdf", "optimize", NULL }, "pdf-optimize-for-print", NULL },
     { "pdf_repair", "PDF Repair", "PDF Repair", "application-pdf-symbolic", (const char*[]){ "pdf", "repair", NULL }, "pdf-repair", NULL },
