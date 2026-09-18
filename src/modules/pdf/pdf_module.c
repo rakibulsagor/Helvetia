@@ -11,7 +11,7 @@ static const HelvetiaTool tools_viewing_navigation[] = {
     { "pdf_search", "PDF Search", "PDF Search", "system-search-symbolic", (const char*[]){ "search", "pdf", NULL }, "pdf-search", NULL },
     { "pdf_outline_bookmarks", "PDF Outline / Bookmarks", "PDF Outline / Bookmarks", "application-pdf-symbolic", (const char*[]){ "bookmarks", "outline", "pdf", NULL }, "pdf-outline-bookmarks", NULL },
     { "pdf_metadata_viewer", "PDF Metadata Viewer", "PDF Metadata Viewer", "application-pdf-symbolic", (const char*[]){ "viewer", "metadata", "pdf", NULL }, "pdf-metadata-viewer", NULL },
-    { NULL }
+    { 0 }
 };
 
 static const HelvetiaTool tools_organizing[] = {
@@ -24,7 +24,7 @@ static const HelvetiaTool tools_organizing[] = {
     { "insert_pages", "Insert Pages", "Insert Pages", "application-pdf-symbolic", (const char*[]){ "insert", "pages", "pdf", NULL }, "insert-pages", NULL },
     { "duplicate_pages", "Duplicate Pages", "Duplicate Pages", "application-pdf-symbolic", (const char*[]){ "pages", "pdf", "duplicate", NULL }, "duplicate-pages", NULL },
     { "reverse_page_order", "Reverse Page Order", "Reverse Page Order", "application-pdf-symbolic", (const char*[]){ "pdf", "page", "reverse", "order", NULL }, "reverse-page-order", NULL },
-    { NULL }
+    { 0 }
 };
 
 static const HelvetiaTool tools_editing[] = {
@@ -42,7 +42,7 @@ static const HelvetiaTool tools_editing[] = {
     { "pdf_bookmark_editor", "PDF Bookmark Editor", "PDF Bookmark Editor", "document-edit-symbolic", (const char*[]){ "editor", "bookmark", "pdf", NULL }, "pdf-bookmark-editor", NULL },
     { "pdf_link_editor", "PDF Link Editor", "PDF Link Editor", "document-edit-symbolic", (const char*[]){ "link", "editor", "pdf", NULL }, "pdf-link-editor", NULL },
     { "pdf_attachment_manager", "PDF Attachment Manager", "PDF Attachment Manager", "application-pdf-symbolic", (const char*[]){ "manager", "attachment", "pdf", NULL }, "pdf-attachment-manager", NULL },
-    { NULL }
+    { 0 }
 };
 
 static const HelvetiaTool tools_security[] = {
@@ -51,7 +51,7 @@ static const HelvetiaTool tools_security[] = {
     { "pdf_permissions", "PDF Permissions", "print, copy, edit", "application-pdf-symbolic", (const char*[]){ "permissions", "pdf", NULL }, "pdf-permissions", NULL },
     { "pdf_certificate_sign", "PDF Certificate Sign", "PDF Certificate Sign", "application-pdf-symbolic", (const char*[]){ "sign", "certificate", "pdf", NULL }, "pdf-certificate-sign", NULL },
     { "pdf_timestamp", "PDF Timestamp", "PDF Timestamp", "application-pdf-symbolic", (const char*[]){ "timestamp", "pdf", NULL }, "pdf-timestamp", NULL },
-    { NULL }
+    { 0 }
 };
 
 static const HelvetiaTool tools_optimization[] = {
@@ -60,7 +60,7 @@ static const HelvetiaTool tools_optimization[] = {
     { "pdf_optimize_for_print", "PDF Optimize for Print", "PDF Optimize for Print", "printer-symbolic", (const char*[]){ "for", "print", "pdf", "optimize", NULL }, "pdf-optimize-for-print", NULL },
     { "pdf_repair", "PDF Repair", "PDF Repair", "application-pdf-symbolic", (const char*[]){ "pdf", "repair", NULL }, "pdf-repair", NULL },
     { "pdf_linearize", "PDF Linearize", "fast web view", "application-pdf-symbolic", (const char*[]){ "pdf", "linearize", NULL }, "pdf-linearize", NULL },
-    { NULL }
+    { 0 }
 };
 
 static const HelvetiaTool tools_conversion[] = {
@@ -78,7 +78,7 @@ static const HelvetiaTool tools_conversion[] = {
     { "markdown_to_pdf", "Markdown to PDF", "Markdown to PDF", "application-pdf-symbolic", (const char*[]){ "markdown", "pdf", NULL }, "markdown2pdf", NULL },
     { "epub_to_pdf", "EPUB to PDF", "EPUB to PDF", "application-pdf-symbolic", (const char*[]){ "epub", "pdf", NULL }, "epub2pdf", NULL },
     { "pdf_a_converter", "PDF/A Converter", "archival", "application-pdf-symbolic", (const char*[]){ "converter", "pdfa", "pdf", NULL }, "pdf-a-converter", NULL },
-    { NULL }
+    { 0 }
 };
 
 static const HelvetiaTool tools_ocr_scan[] = {
@@ -88,13 +88,13 @@ static const HelvetiaTool tools_ocr_scan[] = {
     { "multi_page_scan", "Multi-page Scan", "Multi-page Scan", "application-pdf-symbolic", (const char*[]){ "multipage", "pdf", "scan", NULL }, "multi-page-scan", NULL },
     { "deskew_scanned_pages", "Deskew Scanned Pages", "Deskew Scanned Pages", "application-pdf-symbolic", (const char*[]){ "scanned", "pages", "deskew", "pdf", NULL }, "deskew-scanned-pages", NULL },
     { "auto_crop_scan", "Auto-crop Scan", "Auto-crop Scan", "application-pdf-symbolic", (const char*[]){ "autocrop", "scan", "pdf", NULL }, "auto-crop-scan", NULL },
-    { NULL }
+    { 0 }
 };
 
 static const HelvetiaTool tools_comparison[] = {
     { "pdf_compare", "PDF Compare", "side-by-side diff", "application-pdf-symbolic", (const char*[]){ "compare", "pdf", NULL }, "pdf-compare", NULL },
     { "pdf_overlay_compare", "PDF Overlay Compare", "PDF Overlay Compare", "application-pdf-symbolic", (const char*[]){ "overlay", "compare", "pdf", NULL }, "pdf-overlay-compare", NULL },
-    { NULL }
+    { 0 }
 };
 
 static const HelvetiaSubcategory pdf_subcategories[] = {
@@ -106,7 +106,7 @@ static const HelvetiaSubcategory pdf_subcategories[] = {
     { "Conversion", tools_conversion },
     { "OCR & Scan", tools_ocr_scan },
     { "Comparison", tools_comparison },
-    { NULL, NULL }
+    { 0 }
 };
 
 static const HelvetiaModule pdf_module = {
