@@ -3,6 +3,7 @@
  * Entry point: initialise registry, load plugins, launch GTK4 app.
  * ================================================================ */
 #include <gtk/gtk.h>
+#include <adwaita.h>
 #include "config.h"
 #include "ui/window.h"
 #include "core/module_registry.h"
@@ -12,7 +13,7 @@
 
 static const HelvetiaTool *startup_tool = NULL;
 
-static void on_activate(GtkApplication *app, gpointer user_data) {
+static void on_activate(AdwApplication *app, gpointer user_data) {
     (void)user_data;
     HelvetiaWindow *win = helvetia_window_new(app);
     gtk_window_present(GTK_WINDOW(win));
@@ -52,9 +53,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    /* 4. Create and run the GTK4 application */
-    GtkApplication *app =
-        gtk_application_new(APP_ID, G_APPLICATION_DEFAULT_FLAGS);
+    /* 4. Create and run the AdwApplication */
+    AdwApplication *app =
+        adw_application_new(APP_ID, G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);
 
     /* Remove arguments so GTK doesn't complain about unknown CLI flags */

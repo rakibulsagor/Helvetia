@@ -1,309 +1,95 @@
 /* ================================================================
  * Helvetia — theme.css
- * A sleek dark-mode stylesheet for the GTK4 application shell.
+ * Cleaned up to properly inherit Libadwaita dynamic colors.
  * ================================================================ */
-
-/* ---- Colour tokens — aligned to Helvetia design system ---- */
 
 /* ================================================================
- * Window & root
+ * Typography & Helpers
  * ================================================================ */
-window {
-    background-color: #111313;
-    color: #f7f5ef;
-    font-family: "Cantarell", "Inter", sans-serif;
-    font-size: 14px;
-}
-
-/* ================================================================
- * Sidebar
- * ================================================================ */
-.helvetia-sidebar {
-    background-color: #1b1b1d;
-    border-right: 1px solid rgba(255,255,255,0.06);
-    min-width: 220px;
-}
-
-.helvetia-header {
-    background: linear-gradient(135deg, #1b1b1d 0%, #222124 100%);
-}
-
 .helvetia-app-title {
     font-size: 19px;
     font-weight: 700;
-    color: #f7f5ef;
     letter-spacing: 0.5px;
 }
 
-.helvetia-nav {
-    background: transparent;
-    padding: 8px 0;
-}
-
-.helvetia-nav row {
-    border-radius: 8px;
-    margin: 2px 8px;
-    transition: background 120ms ease;
-    color: #9ca3af;
-}
-
-.helvetia-nav row:hover {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: #f3f4f6;
-}
-
-.helvetia-nav row:selected,
-.helvetia-nav row:selected:hover {
-    background-color: #ef4444;
-    color: white;
-}
-
-.helvetia-nav row label {
-    font-size: 13.5px;
-    font-weight: 500;
-}
-
-separator {
-    background-color: rgba(255,255,255,0.06);
-    min-height: 1px;
-}
-
-/* ================================================================
- * Stack / content area
- * ================================================================ */
-scrolledwindow {
-    background-color: #161618;
+.helvetia-fg-muted,
+.helvetia-card-subtitle,
+.helvetia-section-desc {
+    opacity: 0.65;
 }
 
 /* ================================================================
  * Tool cards
  * ================================================================ */
 .helvetia-card {
-    background-color: #1a1d1c;
-    border: 1px solid #2c302e;
+    background-color: alpha(currentColor, 0.03);
+    border: 1px solid alpha(currentColor, 0.1);
     border-radius: 14px;
     padding: 18px;
-    transition: background 150ms ease, border-color 150ms ease;
+    transition: all 150ms ease;
 }
 
 .helvetia-card:hover {
-    background-color: #222724;
-    border-color: #e5a13e;
+    background-color: alpha(currentColor, 0.06);
+    border-color: @accent_color;
+    transform: translateY(-1px);
 }
 
 .helvetia-card-title {
     font-size: 15px;
     font-weight: 600;
-    color: #f3f4f6;
     margin-bottom: 4px;
 }
 
 .helvetia-card-subtitle {
     font-size: 12px;
-    color: #9ca3af;
     margin-bottom: 16px;
 }
 
 /* ================================================================
- * Buttons
+ * Results
  * ================================================================ */
-button {
-    border-radius: 9px;
-    padding: 8px 14px;
-    font-weight: 500;
-    transition: background 120ms ease, box-shadow 120ms ease;
-    border: none;
-    background-color: #292d2b;
-    color: #f7f5ef;
-}
-
-button:hover {
-    background-color: #363d39;
-    color: #fffaf0;
-}
-
-button.suggested-action,
-button.helvetia-primary {
-    background-color: #e5a13e;
-    color: #20170b;
-}
-
-button.suggested-action:hover,
-button.helvetia-primary:hover {
-    background-color: #f3bb65;
-}
-
-button.destructive-action {
-    background-color: #ef4444;
-    color: white;
-}
-
-/* ================================================================
- * Entries
- * ================================================================ */
-entry {
-    background-color: #171a19;
-    border: 1px solid #363c38;
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: #f7f5ef;
-    caret-color: #e5a13e;
-}
-
-entry:focus {
-    border-color: #e5a13e;
-    box-shadow: 0 0 0 3px rgba(229,161,62,0.20);
-}
-
-/* ================================================================
- * Labels
- * ================================================================ */
-label {
-    color: #f3f4f6;
-}
-
 .helvetia-result {
     font-family: "JetBrains Mono", "Fira Code", monospace;
-    font-size: 15px;
-    color: #f0c778;
-    padding: 10px;
-    background: #222124;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px;
+    padding: 10px 12px;
+    background-color: alpha(currentColor, 0.05);
+    border-radius: 6px;
+    border: 1px solid alpha(currentColor, 0.1);
 }
 
 .helvetia-section-title {
     font-size: 22px;
     font-weight: 700;
-    color: #f3f4f6;
     margin-bottom: 6px;
 }
 
 .helvetia-section-desc {
     font-size: 13px;
-    color: #9ca3af;
     margin-bottom: 24px;
 }
 
 /* ================================================================
- * DropDown
+ * Layout & Misc
  * ================================================================ */
-dropdown button,
-combobox button {
-    background-color: #222124;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 8px;
-    color: #f3f4f6;
-}
-
-/* ================================================================
- * Progress bars
- * ================================================================ */
-progressbar trough {
-    background-color: #222124;
-    border-radius: 4px;
-}
-
-progressbar progress {
-    background-color: #ef4444;
-    border-radius: 4px;
-}
-
-/* ================================================================
- * Scrollbars
- * ================================================================ */
-scrollbar {
-    background-color: transparent;
-}
-
-scrollbar slider {
-    background-color: rgba(255,255,255,0.12);
-    border-radius: 4px;
-    min-width: 6px;
-    min-height: 6px;
-}
-
-scrollbar slider:hover {
-    background-color: #ef4444;
-}
-
-/* ================================================================
- * Paned handle
- * ================================================================ */
-paned > separator {
-    background-color: rgba(255,255,255,0.06);
-}
-
-/* ================================================================
- * Phase 2 additions
- * ================================================================ */
-
 .helvetia-section-header {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #9ca3af;
+    opacity: 0.6;
     margin-top: 4px;
     margin-bottom: 2px;
 }
 
 .helvetia-badge-ready {
     font-size: 10px;
-    color: #22c55e;
+    color: @success_color;
     margin-top: 4px;
 }
 
 .helvetia-topbar {
-    background-color: #181b1a;
-    border-bottom: 1px solid #303632;
+    background-color: alpha(currentColor, 0.03);
+    border-bottom: 1px solid alpha(currentColor, 0.1);
     min-height: 48px;
-}
-
-.helvetia-result {
-    font-family: monospace;
-    font-size: 13px;
-    color: #e5e7eb;
-    background-color: #0d0d0f;
-    border-radius: 6px;
-    padding: 10px 12px;
-    border: 1px solid #2d2d30;
-}
-
-/* Responsive card hover */
-.helvetia-card:hover {
-    background-color: #222724;
-    border-color: #e5a13e;
-    transform: translateY(-1px);
-    transition: all 0.15s ease;
-}
-
-/* Pinned tools and the separate Favorites window. */
-window:backdrop {
-    background-color: #0d0f0e;
-}
-
-button.flat {
-    background: transparent;
-    color: #d8d5cc;
-    padding: 6px;
-}
-
-button.flat:hover {
-    background-color: rgba(229, 161, 62, 0.16);
-    color: #f3bb65;
-}
-
-listbox row {
-    border-radius: 10px;
-    margin: 3px 8px;
-}
-
-listbox row:hover {
-    background-color: rgba(229, 161, 62, 0.10);
-}
-
-/* Search results */
-.helvetia-nav row:hover {
-    background-color: #2a2a2d;
 }

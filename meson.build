@@ -12,11 +12,13 @@ add_project_arguments('-Wno-pedantic', language : 'c')
 
 # ---- Dependencies ----
 gtk_dep     = dependency('gtk4',      version : '>=4.10')
+adw_dep     = dependency('libadwaita-1', version : '>=1.2')
 glib_dep    = dependency('glib-2.0',  version : '>=2.74')
 gmodule_dep = dependency('gmodule-2.0')
 math_dep    = meson.get_compiler('c').find_library('m', required : false)
 openssl_dep = dependency('openssl')
 json_c_dep  = dependency('json-c')
+libsodium_dep = dependency('libsodium')
 
 # ---- Global config ----
 conf = configuration_data()

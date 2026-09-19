@@ -6,6 +6,6 @@ ui_sources = files(
 
 ui_lib = static_library('helvetia_ui',
   ui_sources,
-  dependencies        : [glib_dep, gtk_dep],
+  dependencies        : [glib_dep, gtk_dep, adw_dep],
   include_directories : include_directories('..'),
 )

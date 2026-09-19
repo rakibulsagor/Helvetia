@@ -8,6 +8,7 @@ helvetia_sources = [
 
 helvetia_pkg_deps = [
   gtk_dep,
+  adw_dep,
   glib_dep,
   gmodule_dep,
   math_dep,

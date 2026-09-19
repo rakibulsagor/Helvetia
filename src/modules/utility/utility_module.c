@@ -375,8 +375,8 @@ static GtkWidget *build_unit_converter(void) {
     /* Each drop-down must own a separate model instance */
     GtkStringList *from_model = gtk_string_list_new(length_units);
     GtkStringList *to_model   = gtk_string_list_new(length_units);
-    GtkWidget *from_dd = gtk_drop_down_new(G_LIST_MODEL(from_model), NULL);
-    GtkWidget *to_dd   = gtk_drop_down_new(G_LIST_MODEL(to_model),   NULL);
+    GtkWidget *from_dd = gtk_drop_down_new(G_LIST_MODEL(from_model), gtk_property_expression_new(GTK_TYPE_STRING_OBJECT, NULL, "string"));
+    GtkWidget *to_dd   = gtk_drop_down_new(G_LIST_MODEL(to_model),   gtk_property_expression_new(GTK_TYPE_STRING_OBJECT, NULL, "string"));
     gtk_drop_down_set_selected(GTK_DROP_DOWN(to_dd), 4); /* default to: inch */
 
     GtkWidget *value_entry = gtk_entry_new();
@@ -500,7 +500,7 @@ static const HelvetiaTool tools_units[] = {
     { "data_size", "Data Size Converter", "B · KB · MB · GB", "drive-harddisk-symbolic", NULL, "datasize", build_generic_math_tool },
     { "speed", "Speed Converter", "mph · km/h · m/s", "view-sort-ascending-symbolic", NULL, "speed", build_generic_math_tool },
     { "pressure", "Pressure Converter", "bar · psi · Pa", "view-sort-ascending-symbolic", NULL, "pressure", build_generic_math_tool },
-    { "energy", "Energy Converter", "J · cal · kWh", "view-sort-ascending-symbolic", NULL, "energy", build_generic_math_tool },
+    { "energy", "Energy Converter", "J · cal · kWh", "view-sort-ascending-symbolic", NULL, "energy", build_energy_converter },
     { .id = NULL }
 };
 

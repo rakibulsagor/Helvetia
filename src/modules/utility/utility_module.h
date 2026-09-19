@@ -17,6 +17,7 @@ GtkWidget *build_stopwatch          (void);
 
 GtkWidget *build_generic_text_tool(void);
 GtkWidget *build_generic_math_tool(void);
+GtkWidget *build_energy_converter(void);
 GtkWidget *build_generic_random_tool(void);
 GtkWidget *build_coming_soon(void);
 GtkWidget *build_calc_sci(void);

@@ -527,7 +527,7 @@ GtkWidget *build_timezone_studio(void) {
     }
   }
 
-  state->search_combo = gtk_drop_down_new(G_LIST_MODEL(string_list), NULL);
+  state->search_combo = gtk_drop_down_new(G_LIST_MODEL(string_list), gtk_property_expression_new(GTK_TYPE_STRING_OBJECT, NULL, "string"));
   g_object_unref(string_list);
 
   gtk_drop_down_set_enable_search(GTK_DROP_DOWN(state->search_combo), TRUE);

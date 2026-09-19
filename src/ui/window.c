@@ -6,7 +6,7 @@
 #include "module_view.h"
 
 struct _HelvetiaWindow {
-    GtkApplicationWindow parent_instance;
+    AdwApplicationWindow parent_instance;
     GtkWidget *outer_stack;    /* "grid" | "tool" */
     GtkWidget *dashboard_box;  /* holds all modules vertically */
     GtkWidget *dashboard_scroll;
@@ -19,7 +19,7 @@ struct _HelvetiaWindow {
     GtkWidget *favorites_list;
 };
 
-G_DEFINE_TYPE(HelvetiaWindow, helvetia_window, GTK_TYPE_APPLICATION_WINDOW)
+G_DEFINE_TYPE(HelvetiaWindow, helvetia_window, ADW_TYPE_APPLICATION_WINDOW)
 
 /* ============================================================
  *  Tool navigation — open / close
@@ -382,6 +382,24 @@ static void on_search_changed(GtkSearchEntry *entry, gpointer user_data) {
 }
 
 /* ============================================================
+ *  Dark Mode Toggle
+ * ============================================================ */
+
+static void on_dark_mode_clicked(GtkButton *btn, gpointer user_data) {
+    (void)user_data;
+    AdwStyleManager *manager = adw_style_manager_get_default();
+    gboolean is_dark = adw_style_manager_get_dark(manager);
+    
+    if (is_dark) {
+        adw_style_manager_set_color_scheme(manager, ADW_COLOR_SCHEME_FORCE_LIGHT);
+        gtk_button_set_icon_name(btn, "weather-clear-night-symbolic");
+    } else {
+        adw_style_manager_set_color_scheme(manager, ADW_COLOR_SCHEME_FORCE_DARK);
+        gtk_button_set_icon_name(btn, "weather-clear-symbolic");
+    }
+}
+
+/* ============================================================
  *  GObject boilerplate
  * ============================================================ */
 
@@ -402,34 +420,34 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     g_object_unref(css);
 
     /* === Main content area === */
+    GtkWidget *toolbar_view = adw_toolbar_view_new();
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    adw_toolbar_view_set_content(ADW_TOOLBAR_VIEW(toolbar_view), main_box);
 
     /* App Header / Search bar */
-    GtkWidget *header_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
-    gtk_widget_set_margin_start(header_bar, 24);
-    gtk_widget_set_margin_end(header_bar, 24);
-    gtk_widget_set_margin_top(header_bar, 16);
-    gtk_widget_set_margin_bottom(header_bar, 16);
+    GtkWidget *header_bar = adw_header_bar_new();
     
     GtkWidget *app_icon = gtk_image_new_from_icon_name("applications-utilities");
     gtk_image_set_pixel_size(GTK_IMAGE(app_icon), 24);
     GtkWidget *app_name = gtk_label_new("Helvetia");
     gtk_widget_add_css_class(app_name, "helvetia-app-title");
     
+    GtkWidget *start_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_box_append(GTK_BOX(start_box), app_icon);
+    gtk_box_append(GTK_BOX(start_box), app_name);
+    
     self->search_entry = gtk_search_entry_new();
     gtk_widget_set_hexpand(self->search_entry, TRUE);
     g_signal_connect(self->search_entry, "search-changed",
                      G_CALLBACK(on_search_changed), self);
 
-    gtk_box_append(GTK_BOX(header_bar), app_icon);
-    gtk_box_append(GTK_BOX(header_bar), app_name);
-    gtk_box_append(GTK_BOX(header_bar), self->search_entry);
+    adw_header_bar_pack_start(ADW_HEADER_BAR(header_bar), start_box);
+    adw_header_bar_set_title_widget(ADW_HEADER_BAR(header_bar), self->search_entry);
 
     GtkWidget *favorites_btn = gtk_button_new_from_icon_name("starred-symbolic");
     gtk_widget_add_css_class(favorites_btn, "flat");
     gtk_widget_set_tooltip_text(favorites_btn, "Show favorite tools");
     g_signal_connect(favorites_btn, "clicked", G_CALLBACK(on_show_favorites), self);
-    gtk_box_append(GTK_BOX(header_bar), favorites_btn);
     
     GtkWidget *stat_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_set_halign(stat_bar, GTK_ALIGN_END);
@@ -439,10 +457,18 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     gtk_widget_add_css_class(stat_lbl, "helvetia-fg-muted");
     gtk_box_append(GTK_BOX(stat_bar), stat_icon);
     gtk_box_append(GTK_BOX(stat_bar), stat_lbl);
-    gtk_box_append(GTK_BOX(header_bar), stat_bar);
     
-    gtk_box_append(GTK_BOX(main_box), header_bar);
-    gtk_box_append(GTK_BOX(main_box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+    GtkWidget *theme_btn = gtk_button_new_from_icon_name(
+        adw_style_manager_get_dark(adw_style_manager_get_default()) ? "weather-clear-symbolic" : "weather-clear-night-symbolic");
+    gtk_widget_add_css_class(theme_btn, "flat");
+    gtk_widget_set_tooltip_text(theme_btn, "Toggle Dark Mode");
+    g_signal_connect(theme_btn, "clicked", G_CALLBACK(on_dark_mode_clicked), NULL);
+    
+    adw_header_bar_pack_end(ADW_HEADER_BAR(header_bar), theme_btn);
+    adw_header_bar_pack_end(ADW_HEADER_BAR(header_bar), favorites_btn);
+    adw_header_bar_pack_end(ADW_HEADER_BAR(header_bar), stat_bar);
+    
+    adw_toolbar_view_add_top_bar(ADW_TOOLBAR_VIEW(toolbar_view), header_bar);
 
     /* outer_stack: "grid" page holds dashboard+search, "tool" page holds tool_stack */
     self->outer_stack = gtk_stack_new();
@@ -494,7 +520,7 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     gtk_stack_add_named(GTK_STACK(self->outer_stack), self->tool_stack, "tool");
 
     gtk_box_append(GTK_BOX(main_box), self->outer_stack);
-    gtk_window_set_child(GTK_WINDOW(self), main_box);
+    adw_application_window_set_content(ADW_APPLICATION_WINDOW(self), toolbar_view);
 
     /* Register modules */
     guint count = helvetia_module_registry_count();
@@ -504,6 +530,6 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     }
 }
 
-HelvetiaWindow *helvetia_window_new(GtkApplication *app) {
+HelvetiaWindow *helvetia_window_new(AdwApplication *app) {
     return g_object_new(HELVETIA_TYPE_WINDOW, "application", app, NULL);
 }

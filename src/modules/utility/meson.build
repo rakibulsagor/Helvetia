@@ -11,11 +11,12 @@ utility_sources = files(
   'quirc/version_db.c',
   'timezone_studio.c',
   'time_picker.c',
-  'math_calculators.c'
+  'math_calculators.c',
+  'unit_converters.c'
 )
 
 utility_lib = static_library('helvetia_utility',
   utility_sources,
-  dependencies        : [glib_dep, gtk_dep, math_dep],
+  dependencies        : [glib_dep, gtk_dep, adw_dep, math_dep],
   include_directories : include_directories('..', '../..'),
 )
