@@ -9,11 +9,72 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <openssl/evp.h>
 
 /* ================================================================
- * File Hash Calculator (MD5/SHA1/SHA256/SHA512 via sha*sum commands)
+ * File Hash Calculator (MD5/SHA1/SHA256/SHA512 via OpenSSL EVP)
  * ================================================================ */
 typedef struct { GtkWidget *entry, *result; } FileHashCtx;
+
+static const EVP_MD *digest_for_name(const char *name) {
+    if (g_strcmp0(name, "md5") == 0) return EVP_md5();
+    if (g_strcmp0(name, "sha1") == 0) return EVP_sha1();
+    if (g_strcmp0(name, "sha256") == 0) return EVP_sha256();
+    if (g_strcmp0(name, "sha512") == 0) return EVP_sha512();
+    return NULL;
+}
+
+static char *format_digest(const char *name, const unsigned char *bytes, unsigned int length) {
+    GString *text = g_string_sized_new((gsize)length * 2);
+    for (unsigned int i = 0; i < length; i++)
+        g_string_append_printf(text, "%02x", bytes[i]);
+    char *result = g_strdup_printf("%s: %s", name, text->str);
+    g_string_free(text, TRUE);
+    return result;
+}
+
+static char *hash_bytes(const char *name, const unsigned char *bytes, gsize length) {
+    const EVP_MD *digest = digest_for_name(name);
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    unsigned char output[EVP_MAX_MD_SIZE];
+    unsigned int output_length = 0;
+    if (!digest || !ctx || !EVP_DigestInit_ex(ctx, digest, NULL) ||
+        !EVP_DigestUpdate(ctx, bytes, length) ||
+        !EVP_DigestFinal_ex(ctx, output, &output_length)) {
+        EVP_MD_CTX_free(ctx);
+        return NULL;
+    }
+    EVP_MD_CTX_free(ctx);
+    return format_digest(name, output, output_length);
+}
+
+static char *hash_file(const char *name, const char *path) {
+    const EVP_MD *digest = digest_for_name(name);
+    FILE *file = fopen(path, "rb");
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    unsigned char buffer[32768], output[EVP_MAX_MD_SIZE];
+    unsigned int output_length = 0;
+    if (!digest || !file || !ctx) {
+        if (file) fclose(file);
+        EVP_MD_CTX_free(ctx);
+        return NULL;
+    }
+    gboolean success = EVP_DigestInit_ex(ctx, digest, NULL) == 1;
+    while (success) {
+        size_t read_count = fread(buffer, 1, sizeof buffer, file);
+        if (read_count > 0 && EVP_DigestUpdate(ctx, buffer, read_count) != 1)
+            success = FALSE;
+        if (read_count < sizeof buffer) {
+            if (ferror(file)) success = FALSE;
+            break;
+        }
+    }
+    if (success)
+        success = EVP_DigestFinal_ex(ctx, output, &output_length) == 1;
+    fclose(file);
+    EVP_MD_CTX_free(ctx);
+    return success ? format_digest(name, output, output_length) : NULL;
+}
 
 static void on_file_hash(GtkButton *btn, gpointer ud) {
     (void)btn;
@@ -24,12 +85,8 @@ static void on_file_hash(GtkButton *btn, gpointer ud) {
         gtk_label_set_text(GTK_LABEL(ctx->result), "⚠ Enter a file path");
         return;
     }
-    char *qpath = g_shell_quote(path);
-    char *cmd   = g_strdup_printf("%ssum %s 2>&1", algo, qpath);
-    g_free(qpath);
-    char *out = hv_run_cmd(cmd);
-    g_free(cmd);
-    gtk_label_set_text(GTK_LABEL(ctx->result), out ? out : "Error");
+    char *out = hash_file(algo, path);
+    gtk_label_set_text(GTK_LABEL(ctx->result), out ? out : "⚠ Could not hash file");
     g_free(out);
 }
 
@@ -38,17 +95,9 @@ static void on_text_hash(GtkButton *btn, gpointer ud) {
     FileHashCtx *ctx = ud;
     const char *algo = g_object_get_data(G_OBJECT(btn), "algo");
     const char *text = gtk_editable_get_text(GTK_EDITABLE(ctx->entry));
-    char *qtext = g_shell_quote(text ? text : "");
-    char *cmd   = g_strdup_printf("printf %%s %s | %ssum 2>&1", qtext, algo);
-    g_free(qtext);
-    char *out = hv_run_cmd(cmd);
-    g_free(cmd);
-    /* Extract just the hash (first word) */
-    if (out) {
-        char *sp = strchr(out, ' ');
-        if (sp) *sp = '\0';
-        gtk_label_set_text(GTK_LABEL(ctx->result), out);
-    }
+    const char *input = text ? text : "";
+    char *out = hash_bytes(algo, (const unsigned char *)input, strlen(input));
+    gtk_label_set_text(GTK_LABEL(ctx->result), out ? out : "⚠ Could not hash text");
     g_free(out);
 }
 

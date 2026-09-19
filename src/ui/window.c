@@ -2,6 +2,7 @@
 #include "widgets.h"
 #include "../core/module_registry.h"
 #include "../core/tool_registry.h"
+#include "../core/favorites.h"
 #include "module_view.h"
 
 struct _HelvetiaWindow {
@@ -14,6 +15,8 @@ struct _HelvetiaWindow {
     GtkWidget *search_results; /* GtkListBox shown during search */
     GtkWidget *search_scroll;  /* Scrolled window holding search_results */
     GtkWidget *content_box;    /* holds search or module_stack */
+    GtkWidget *favorites_window;
+    GtkWidget *favorites_list;
 };
 
 G_DEFINE_TYPE(HelvetiaWindow, helvetia_window, GTK_TYPE_APPLICATION_WINDOW)
@@ -28,6 +31,136 @@ static void on_back_clicked(GtkButton *btn, gpointer user_data) {
     HelvetiaWindow *self = user_data;
     gtk_stack_set_visible_child_name(GTK_STACK(self->outer_stack), "grid");
     gtk_editable_set_text(GTK_EDITABLE(self->search_entry), "");
+}
+
+typedef struct {
+    HelvetiaWindow *window;
+    const HelvetiaTool *tool;
+} FavoriteRowData;
+
+static void favorite_row_data_free(gpointer data, GClosure *closure)
+{
+    (void)closure;
+    g_free(data);
+}
+
+static void refresh_favorites(HelvetiaWindow *self);
+
+static void on_favorite_clicked(GtkButton *button, gpointer user_data)
+{
+    HelvetiaWindow *self = user_data;
+    const HelvetiaTool *tool = g_object_get_data(G_OBJECT(button), "tool");
+    if (!tool)
+        return;
+
+    gboolean added = helvetia_favorites_toggle(tool->id);
+    gtk_button_set_icon_name(button, added ? "starred-symbolic" : "non-starred-symbolic");
+    gtk_widget_set_tooltip_text(GTK_WIDGET(button),
+                                added ? "Remove from favorites" : "Add to favorites");
+    refresh_favorites(self);
+}
+
+static void on_favorite_row_clicked(GtkButton *button, gpointer user_data)
+{
+    FavoriteRowData *data = user_data;
+    helvetia_window_open_tool(data->window, data->tool);
+    if (data->window->favorites_window)
+        gtk_window_present(GTK_WINDOW(data->window));
+    (void)button;
+}
+
+static void on_favorites_window_destroy(GtkWidget *widget, gpointer user_data)
+{
+    HelvetiaWindow *self = user_data;
+    if (self->favorites_window == widget) {
+        self->favorites_window = NULL;
+        self->favorites_list = NULL;
+    }
+}
+
+static void refresh_favorites(HelvetiaWindow *self)
+{
+    if (!self->favorites_list)
+        return;
+
+    GtkWidget *child;
+    while ((child = gtk_widget_get_first_child(self->favorites_list)) != NULL)
+        gtk_list_box_remove(GTK_LIST_BOX(self->favorites_list), child);
+
+    guint count = 0;
+    for (guint i = 0; i < helvetia_module_registry_count(); i++) {
+        const HelvetiaModule *module = helvetia_module_registry_get(i);
+        if (!module || !module->subcategories)
+            continue;
+        for (guint category = 0; module->subcategories[category].name; category++) {
+            const HelvetiaTool *module_tools = module->subcategories[category].tools;
+            for (guint j = 0; module_tools && module_tools[j].id; j++) {
+                const HelvetiaTool *tool = &module_tools[j];
+                if (!helvetia_favorites_contains(tool->id))
+                    continue;
+                GtkWidget *button = gtk_button_new();
+                GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+                GtkWidget *icon = gtk_image_new_from_icon_name(
+                    tool->icon_name ? tool->icon_name : "applications-utilities-symbolic");
+                GtkWidget *label = gtk_label_new(tool->name);
+                gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+                gtk_widget_set_hexpand(label, TRUE);
+                gtk_box_append(GTK_BOX(row), icon);
+                gtk_box_append(GTK_BOX(row), label);
+                gtk_button_set_child(GTK_BUTTON(button), row);
+                gtk_widget_set_margin_start(button, 8);
+                gtk_widget_set_margin_end(button, 8);
+                gtk_widget_set_margin_top(button, 4);
+                gtk_widget_set_margin_bottom(button, 4);
+                FavoriteRowData *data = g_new(FavoriteRowData, 1);
+                data->window = self;
+                data->tool = tool;
+                g_signal_connect_data(button, "clicked", G_CALLBACK(on_favorite_row_clicked),
+                                      data, favorite_row_data_free, 0);
+                gtk_list_box_append(GTK_LIST_BOX(self->favorites_list), button);
+                count++;
+            }
+        }
+    }
+    if (count == 0) {
+        GtkWidget *empty = gtk_label_new("No favorite tools yet. Use the star on a tool page to add one.");
+        gtk_label_set_wrap(GTK_LABEL(empty), TRUE);
+        gtk_widget_set_margin_top(empty, 24);
+        gtk_widget_set_margin_bottom(empty, 24);
+        gtk_list_box_append(GTK_LIST_BOX(self->favorites_list), empty);
+    }
+}
+
+static void on_show_favorites(GtkButton *button, gpointer user_data)
+{
+    HelvetiaWindow *self = user_data;
+    if (!self->favorites_window) {
+        GtkWidget *window = gtk_application_window_new(
+            GTK_APPLICATION(gtk_window_get_application(GTK_WINDOW(self))));
+        gtk_window_set_title(GTK_WINDOW(window), "Helvetia Favorites");
+        gtk_window_set_default_size(GTK_WINDOW(window), 420, 560);
+        gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(self));
+        GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        GtkWidget *title = gtk_label_new("Favorite Tools");
+        gtk_widget_add_css_class(title, "title-2");
+        gtk_label_set_xalign(GTK_LABEL(title), 0.0f);
+        gtk_widget_set_margin_start(title, 18);
+        gtk_widget_set_margin_end(title, 18);
+        gtk_widget_set_margin_top(title, 18);
+        gtk_widget_set_margin_bottom(title, 12);
+        self->favorites_list = gtk_list_box_new();
+        GtkWidget *scroll = gtk_scrolled_window_new();
+        gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), self->favorites_list);
+        gtk_widget_set_vexpand(scroll, TRUE);
+        gtk_box_append(GTK_BOX(box), title);
+        gtk_box_append(GTK_BOX(box), scroll);
+        gtk_window_set_child(GTK_WINDOW(window), box);
+        self->favorites_window = window;
+        g_signal_connect(window, "destroy", G_CALLBACK(on_favorites_window_destroy), self);
+    }
+    refresh_favorites(self);
+    gtk_window_present(GTK_WINDOW(self->favorites_window));
+    (void)button;
 }
 
 /* Open a tool's dedicated full-panel view */
@@ -66,6 +199,15 @@ void helvetia_window_open_tool(HelvetiaWindow *self, const HelvetiaTool *tool) {
         gtk_box_append(GTK_BOX(topbar), icon);
         gtk_box_append(GTK_BOX(topbar), title_lbl);
 
+        GtkWidget *favorite_btn = gtk_button_new_from_icon_name(
+            helvetia_favorites_contains(tool->id) ? "starred-symbolic" : "non-starred-symbolic");
+        gtk_widget_add_css_class(favorite_btn, "flat");
+        gtk_widget_set_tooltip_text(favorite_btn,
+            helvetia_favorites_contains(tool->id) ? "Remove from favorites" : "Add to favorites");
+        g_object_set_data(G_OBJECT(favorite_btn), "tool", (gpointer)tool);
+        g_signal_connect(favorite_btn, "clicked", G_CALLBACK(on_favorite_clicked), self);
+        gtk_box_append(GTK_BOX(topbar), favorite_btn);
+
         if (tool->description && *tool->description) {
             GtkWidget *desc = gtk_label_new(tool->description);
             gtk_widget_add_css_class(desc, "helvetia-fg-muted");
@@ -95,12 +237,13 @@ void helvetia_window_open_tool(HelvetiaWindow *self, const HelvetiaTool *tool) {
             gtk_image_set_pixel_size(GTK_IMAGE(img), 48);
             gtk_widget_add_css_class(img, "helvetia-fg-muted");
 
-            GtkWidget *lbl = gtk_label_new("This tool is coming soon!");
+            GtkWidget *lbl = gtk_label_new("This tool is unavailable in this build");
             gtk_widget_add_css_class(lbl, "helvetia-card-title");
 
             GtkWidget *sub = gtk_label_new(
-                "The underlying library will be implemented in the next phase.");
+                "Its catalog entry is present, but no local backend has been linked yet.");
             gtk_widget_add_css_class(sub, "helvetia-fg-muted");
+            gtk_label_set_wrap(GTK_LABEL(sub), TRUE);
 
             gtk_box_append(GTK_BOX(center), img);
             gtk_box_append(GTK_BOX(center), lbl);
@@ -281,6 +424,12 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     gtk_box_append(GTK_BOX(header_bar), app_icon);
     gtk_box_append(GTK_BOX(header_bar), app_name);
     gtk_box_append(GTK_BOX(header_bar), self->search_entry);
+
+    GtkWidget *favorites_btn = gtk_button_new_from_icon_name("starred-symbolic");
+    gtk_widget_add_css_class(favorites_btn, "flat");
+    gtk_widget_set_tooltip_text(favorites_btn, "Show favorite tools");
+    g_signal_connect(favorites_btn, "clicked", G_CALLBACK(on_show_favorites), self);
+    gtk_box_append(GTK_BOX(header_bar), favorites_btn);
     
     GtkWidget *stat_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_set_halign(stat_bar, GTK_ALIGN_END);
@@ -351,7 +500,6 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     guint count = helvetia_module_registry_count();
     for (guint i = 0; i < count; i++) {
         const HelvetiaModule *m = helvetia_module_registry_get(i);
-        helvetia_tool_registry_index_module(m);
         add_module(self, m);
     }
 }

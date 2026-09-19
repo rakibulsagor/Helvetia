@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "quirc_internal.h"
 
 const char *quirc_version(void)
@@ -59,21 +60,32 @@ int quirc_resize(struct quirc *q, int w, int h)
 	 * both the API and ABI. Thus, at the moment, let's just do a sanity
 	 * check.
 	 */
-	if (w < 0 || h < 0)
+	if (w <= 0 || h <= 0)
+		goto fail;
+
+	/* Validate products before allocating or converting dimensions. */
+	if ((size_t)w > SIZE_MAX / (size_t)h)
+		goto fail;
+	size_t newdim = (size_t)w * (size_t)h;
+	if (newdim > SIZE_MAX / sizeof(quirc_pixel_t))
 		goto fail;
 
 	/*
 	 * alloc a new buffer for q->image. We avoid realloc(3) because we want
 	 * on failure to be leave `q` in a consistant, unmodified state.
 	 */
-	image = calloc(w, h);
+	image = calloc(newdim, sizeof(*image));
 	if (!image)
 		goto fail;
 
 	/* compute the "old" (i.e. currently allocated) and the "new"
 	   (i.e. requested) image dimensions */
-	size_t olddim = q->w * q->h;
-	size_t newdim = w * h;
+	size_t olddim = 0;
+	if (q->w > 0 && q->h > 0) {
+		if ((size_t)q->w > SIZE_MAX / (size_t)q->h)
+			goto fail;
+		olddim = (size_t)q->w * (size_t)q->h;
+	}
 	size_t min = (olddim < newdim ? olddim : newdim);
 
 	/*
@@ -81,7 +93,8 @@ int quirc_resize(struct quirc *q, int w, int h)
 	 * old buffer when the new size is greater and (b) to write beyond the
 	 * new buffer when the new size is smaller, hence the min computation.
 	 */
-	(void)memcpy(image, q->image, min);
+	if (min > 0 && q->image)
+		(void)memcpy(image, q->image, min);
 
 	/* alloc a new buffer for q->pixels if needed */
 	if (!QUIRC_PIXEL_ALIAS_IMAGE) {
@@ -101,7 +114,7 @@ int quirc_resize(struct quirc *q, int w, int h)
 	 * - the maximum height of rings would be about 1/3 of the image height.
 	 */
 
-	if ((size_t)h * 2 / 2 != h) {
+	if ((size_t)h > SIZE_MAX / 2) {
 		goto fail; /* size_t overflow */
 	}
 	num_vars = (size_t)h * 2 / 3;

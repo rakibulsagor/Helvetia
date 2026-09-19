@@ -1,4 +1,5 @@
 #include "module_registry.h"
+#include "tool_registry.h"
 #include <glib.h>
 
 static GPtrArray *g_modules = NULL;
@@ -22,6 +23,13 @@ void helvetia_module_registry_add(const HelvetiaModule *module) {
     /* Prevent duplicate ids */
     if (helvetia_module_registry_find(module->id)) return;
     g_ptr_array_add(g_modules, (gpointer)module);
+    /*
+     * Keep the tool index in lockstep with the module registry.  Previously
+     * this happened while constructing the first window, which meant CLI
+     * dispatch ran against an empty index and creating another window added
+     * every tool a second time.
+     */
+    helvetia_tool_registry_index_module(module);
 }
 
 guint helvetia_module_registry_count(void) {

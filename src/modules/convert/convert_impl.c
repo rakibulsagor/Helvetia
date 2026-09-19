@@ -8,6 +8,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <limits.h>
+#include <json-c/json.h>
 
 /* ================================================================
  * Base64 Encode / Decode
@@ -250,16 +252,36 @@ GtkWidget *build_rot13(void) {
  * ================================================================ */
 typedef struct { GtkWidget *tv_in, *tv_out; } JsonCtx;
 
+static char *json_transform(const char *input, int format_flags) {
+    if (strlen(input) >= INT_MAX)
+        return g_strdup("⚠ JSON input is too large to parse");
+    struct json_tokener *tokener = json_tokener_new_ex(JSON_TOKENER_DEFAULT_DEPTH);
+    if (!tokener)
+        return g_strdup("⚠ Could not allocate JSON parser");
+    json_tokener_set_flags(tokener, JSON_TOKENER_STRICT);
+    struct json_object *object = json_tokener_parse_ex(tokener, input,
+                                                       (int)strlen(input) + 1);
+    enum json_tokener_error error = json_tokener_get_error(tokener);
+    size_t offset = json_tokener_get_parse_end(tokener);
+    json_tokener_free(tokener);
+    if (error != json_tokener_success || !object) {
+        if (object) json_object_put(object);
+        return g_strdup_printf("⚠ Invalid JSON at byte %zu: %s", offset,
+                               json_tokener_error_desc(error));
+    }
+    const char *serialized = json_object_to_json_string_ext(object, format_flags);
+    char *result = g_strdup(serialized);
+    json_object_put(object);
+    return result;
+}
+
 static void on_json_format(GtkButton *btn, gpointer ud) {
     (void)btn;
     JsonCtx *ctx = ud;
     char *input = hv_textview_get_text(ctx->tv_in);
-    char *cmd = g_strdup_printf("echo %s | python3 -m json.tool 2>&1",
-                                 g_shell_quote(input));
+    char *output = json_transform(input, JSON_C_TO_STRING_PRETTY);
     g_free(input);
-    char *output = hv_run_cmd(cmd);
-    g_free(cmd);
-    hv_textview_set_text(ctx->tv_out, output ? output : "⚠ Error formatting JSON");
+    hv_textview_set_text(ctx->tv_out, output);
     g_free(output);
 }
 
@@ -267,13 +289,23 @@ static void on_json_minify(GtkButton *btn, gpointer ud) {
     (void)btn;
     JsonCtx *ctx = ud;
     char *input = hv_textview_get_text(ctx->tv_in);
-    char *cmd = g_strdup_printf(
-        "echo %s | python3 -c \"import sys,json; print(json.dumps(json.load(sys.stdin)))\" 2>&1",
-        g_shell_quote(input));
+    char *output = json_transform(input, JSON_C_TO_STRING_PLAIN);
     g_free(input);
-    char *output = hv_run_cmd(cmd);
-    g_free(cmd);
-    hv_textview_set_text(ctx->tv_out, output ? output : "⚠ Invalid JSON");
+    hv_textview_set_text(ctx->tv_out, output);
+    g_free(output);
+}
+
+static void on_json_validate(GtkButton *btn, gpointer ud) {
+    (void)btn;
+    JsonCtx *ctx = ud;
+    char *input = hv_textview_get_text(ctx->tv_in);
+    char *output = json_transform(input, JSON_C_TO_STRING_PLAIN);
+    if (!g_str_has_prefix(output, "⚠")) {
+        g_free(output);
+        output = g_strdup("✓ Valid JSON");
+    }
+    g_free(input);
+    hv_textview_set_text(ctx->tv_out, output);
     g_free(output);
 }
 
@@ -288,8 +320,10 @@ GtkWidget *build_json_formatter(void) {
     GtkWidget *btns  = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *fmt   = hv_make_action_btn("Format / Pretty-print");
     GtkWidget *mini  = gtk_button_new_with_label("Minify");
+    GtkWidget *valid = gtk_button_new_with_label("Validate");
     gtk_box_append(GTK_BOX(btns), fmt);
     gtk_box_append(GTK_BOX(btns), mini);
+    gtk_box_append(GTK_BOX(btns), valid);
     gtk_box_append(GTK_BOX(box), btns);
 
     gtk_box_append(GTK_BOX(box), gtk_label_new("Output:"));
@@ -301,9 +335,12 @@ GtkWidget *build_json_formatter(void) {
     ctx->tv_in = tv_in; ctx->tv_out = tv_out;
     g_signal_connect(fmt,  "clicked", G_CALLBACK(on_json_format), ctx);
     g_signal_connect(mini, "clicked", G_CALLBACK(on_json_minify), ctx);
+    g_signal_connect(valid, "clicked", G_CALLBACK(on_json_validate), ctx);
     g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_free), ctx);
     return box;
 }
+
+GtkWidget *build_json_validator(void) { return build_json_formatter(); }
 
 /* ================================================================
  * Line Ending Converter

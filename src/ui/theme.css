@@ -9,9 +9,9 @@
  * Window & root
  * ================================================================ */
 window {
-    background-color: #161618;
-    color: #f3f4f6;
-    font-family: "Inter", "Segoe UI", sans-serif;
+    background-color: #111313;
+    color: #f7f5ef;
+    font-family: "Cantarell", "Inter", sans-serif;
     font-size: 14px;
 }
 
@@ -29,9 +29,9 @@ window {
 }
 
 .helvetia-app-title {
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
-    color: #f3f4f6;
+    color: #f7f5ef;
     letter-spacing: 0.5px;
 }
 
@@ -79,16 +79,16 @@ scrolledwindow {
  * Tool cards
  * ================================================================ */
 .helvetia-card {
-    background-color: #1b1b1d;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 20px;
+    background-color: #1a1d1c;
+    border: 1px solid #2c302e;
+    border-radius: 14px;
+    padding: 18px;
     transition: background 150ms ease, border-color 150ms ease;
 }
 
 .helvetia-card:hover {
-    background-color: #222124;
-    border-color: #ef4444;
+    background-color: #222724;
+    border-color: #e5a13e;
 }
 
 .helvetia-card-title {
@@ -108,29 +108,29 @@ scrolledwindow {
  * Buttons
  * ================================================================ */
 button {
-    border-radius: 8px;
-    padding: 8px 18px;
+    border-radius: 9px;
+    padding: 8px 14px;
     font-weight: 500;
     transition: background 120ms ease, box-shadow 120ms ease;
     border: none;
-    background-color: #222124;
-    color: #f3f4f6;
+    background-color: #292d2b;
+    color: #f7f5ef;
 }
 
 button:hover {
-    background-color: #ef4444;
-    color: white;
+    background-color: #363d39;
+    color: #fffaf0;
 }
 
 button.suggested-action,
 button.helvetia-primary {
-    background-color: #ef4444;
-    color: white;
+    background-color: #e5a13e;
+    color: #20170b;
 }
 
 button.suggested-action:hover,
 button.helvetia-primary:hover {
-    background-color: #fca5a5;
+    background-color: #f3bb65;
 }
 
 button.destructive-action {
@@ -142,17 +142,17 @@ button.destructive-action {
  * Entries
  * ================================================================ */
 entry {
-    background-color: #222124;
-    border: 1px solid rgba(255,255,255,0.06);
+    background-color: #171a19;
+    border: 1px solid #363c38;
     border-radius: 8px;
     padding: 8px 12px;
-    color: #f3f4f6;
-    caret-color: #ef4444;
+    color: #f7f5ef;
+    caret-color: #e5a13e;
 }
 
 entry:focus {
-    border-color: #ef4444;
-    box-shadow: 0 0 0 3px rgba(108,99,255,0.20);
+    border-color: #e5a13e;
+    box-shadow: 0 0 0 3px rgba(229,161,62,0.20);
 }
 
 /* ================================================================
@@ -165,7 +165,7 @@ label {
 .helvetia-result {
     font-family: "JetBrains Mono", "Fira Code", monospace;
     font-size: 15px;
-    color: #10b981;
+    color: #f0c778;
     padding: 10px;
     background: #222124;
     border-radius: 8px;
@@ -255,8 +255,8 @@ paned > separator {
 }
 
 .helvetia-topbar {
-    background-color: #1c1c1e;
-    border-bottom: 1px solid #2d2d30;
+    background-color: #181b1a;
+    border-bottom: 1px solid #303632;
     min-height: 48px;
 }
 
@@ -272,10 +272,35 @@ paned > separator {
 
 /* Responsive card hover */
 .helvetia-card:hover {
-    background-color: #2a2a2d;
-    border-color: #ef4444;
+    background-color: #222724;
+    border-color: #e5a13e;
     transform: translateY(-1px);
     transition: all 0.15s ease;
+}
+
+/* Pinned tools and the separate Favorites window. */
+window:backdrop {
+    background-color: #0d0f0e;
+}
+
+button.flat {
+    background: transparent;
+    color: #d8d5cc;
+    padding: 6px;
+}
+
+button.flat:hover {
+    background-color: rgba(229, 161, 62, 0.16);
+    color: #f3bb65;
+}
+
+listbox row {
+    border-radius: 10px;
+    margin: 3px 8px;
+}
+
+listbox row:hover {
+    background-color: rgba(229, 161, 62, 0.10);
 }
 
 /* Search results */

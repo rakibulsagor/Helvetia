@@ -2,6 +2,7 @@ core_sources = files(
   'module_registry.c',
   'plugin_loader.c',
   'tool_registry.c',
+  'favorites.c',
 )
 
 core_lib = static_library('helvetia_core',

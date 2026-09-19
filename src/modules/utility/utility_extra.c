@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <time.h>
+#include <unistd.h>
 
 /* ================================================================
  * Password Generator
@@ -43,17 +44,19 @@ static void on_pass_gen(GtkButton *btn, gpointer ud) {
         return;
     }
 
-    char *pass = g_malloc(len + 1);
-    guchar *rnd = g_malloc(len);
-    if (0) /* skip g_open check */ {
-        /* fallback */
-        for (int i = 0; i < len; i++)
-            rnd[i] = (guchar)(g_random_int() & 0xFF);
-    } else {
-        FILE *urnd = fopen("/dev/urandom", "rb");
-        if (urnd) { fread(rnd, 1, len, urnd); fclose(urnd); }
-        else { for (int i = 0; i < len; i++) rnd[i] = (guchar)(g_random_int() & 0xFF); }
+    char *pass = g_malloc((gsize)len + 1);
+    guchar *rnd = g_malloc((gsize)len);
+    FILE *urnd = fopen("/dev/urandom", "rb");
+    if (!urnd || fread(rnd, 1, (size_t)len, urnd) != (size_t)len) {
+        if (urnd) fclose(urnd);
+        g_free(rnd);
+        g_free(pass);
+        g_string_free(charset, TRUE);
+        gtk_label_set_text(GTK_LABEL(ctx->result),
+                           "⚠ Unable to read secure random bytes");
+        return;
     }
+    fclose(urnd);
     for (int i = 0; i < len; i++)
         pass[i] = charset->str[rnd[i] % charset->len];
     pass[len] = '\0';
@@ -444,6 +447,18 @@ GtkWidget *build_unix_timestamp(void) {
  * ================================================================ */
 typedef struct { GtkWidget *tv1, *tv2, *result; } DiffCtx;
 
+static gboolean write_all(int fd, const char *data, gsize length)
+{
+    while (length > 0) {
+        ssize_t written = write(fd, data, length);
+        if (written <= 0)
+            return FALSE;
+        data += written;
+        length -= (gsize)written;
+    }
+    return TRUE;
+}
+
 static void on_diff_clicked(GtkButton *btn, gpointer ud) {
     (void)btn;
     DiffCtx *ctx = ud;
@@ -455,13 +470,24 @@ static void on_diff_clicked(GtkButton *btn, gpointer ud) {
     char f2[] = "/tmp/helvetia_diff_b_XXXXXX";
     int fd1 = mkstemp(f1), fd2 = mkstemp(f2);
     if (fd1 < 0 || fd2 < 0) {
+        if (fd1 >= 0) { close(fd1); unlink(f1); }
+        if (fd2 >= 0) { close(fd2); unlink(f2); }
         hv_textview_set_text(ctx->result, "⚠ Could not create temp files");
         g_free(t1); g_free(t2);
         return;
     }
-    write(fd1, t1, strlen(t1)); close(fd1);
-    write(fd2, t2, strlen(t2)); close(fd2);
+    gboolean wrote = write_all(fd1, t1, strlen(t1)) &&
+                     write_all(fd2, t2, strlen(t2));
+    close(fd1);
+    close(fd2);
     g_free(t1); g_free(t2);
+
+    if (!wrote) {
+        unlink(f1);
+        unlink(f2);
+        hv_textview_set_text(ctx->result, "⚠ Could not write temporary files");
+        return;
+    }
 
     char cmd[512];
     snprintf(cmd, sizeof cmd, "diff --unified=3 %s %s 2>&1", f1, f2);
@@ -942,4 +968,3 @@ GtkWidget *build_calc_sci(void) {
     gtk_box_append(GTK_BOX(box), grid);
     return box;
 }
-

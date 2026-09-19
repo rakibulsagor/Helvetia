@@ -20,7 +20,7 @@ static const HelvetiaTool tools_archives[] = {
 
 static const HelvetiaTool tools_data_formats[] = {
     { "json_formatter", "JSON Formatter", "JSON Formatter", "view-refresh-symbolic", (const char*[]){ "convert", "json", "formatter", NULL }, "json-formatter", build_json_formatter },
-    { "json_validator", "JSON Validator", "JSON Validator", "view-refresh-symbolic", (const char*[]){ "validator", "json", "convert", NULL }, "json-validator", NULL },
+    { "json_validator", "JSON Validator", "Validate JSON syntax", "view-refresh-symbolic", (const char*[]){ "validator", "json", "convert", NULL }, "json-validator", build_json_validator },
     { "json_to_yaml", "JSON to YAML", "JSON to YAML", "view-refresh-symbolic", (const char*[]){ "convert", "json", "yaml", NULL }, "json2yaml", NULL },
     { "yaml_to_json", "YAML to JSON", "YAML to JSON", "view-refresh-symbolic", (const char*[]){ "convert", "json", "yaml", NULL }, "yaml2json", NULL },
     { "json_to_xml", "JSON to XML", "JSON to XML", "view-refresh-symbolic", (const char*[]){ "convert", "json", "xml", NULL }, "json2xml", NULL },

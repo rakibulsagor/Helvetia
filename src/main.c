@@ -8,6 +8,7 @@
 #include "core/module_registry.h"
 #include "core/plugin_loader.h"
 #include "core/tool_registry.h"
+#include "core/favorites.h"
 
 static const HelvetiaTool *startup_tool = NULL;
 
@@ -26,6 +27,7 @@ int main(int argc, char **argv) {
     /* 1. Initialise the module registry and tool registry */
     helvetia_tool_registry_init();
     helvetia_module_registry_init();
+    helvetia_favorites_init();
 
     /* 2. Register all built-in (statically linked) modules */
     helvetia_register_builtin_modules();
@@ -62,6 +64,7 @@ int main(int argc, char **argv) {
     helvetia_plugin_loader_shutdown();
     helvetia_module_registry_shutdown();
     helvetia_tool_registry_cleanup();
+    helvetia_favorites_shutdown();
     g_object_unref(app);
     return status;
 }

@@ -17,15 +17,26 @@ void helvetia_tool_registry_cleanup(void) {
 }
 
 void helvetia_tool_registry_index_module(const HelvetiaModule *module) {
-    if (!all_tools) return;
     if (!module || !module->subcategories) return;
+    helvetia_tool_registry_init();
     
     for (int i = 0; module->subcategories[i].name != NULL; i++) {
         const HelvetiaSubcategory *sub = &module->subcategories[i];
         if (!sub->tools) continue;
         
         for (int j = 0; sub->tools[j].id != NULL; j++) {
-            g_ptr_array_add(all_tools, (gpointer)&sub->tools[j]);
+            const HelvetiaTool *tool = &sub->tools[j];
+            gboolean indexed = FALSE;
+
+            for (guint k = 0; k < all_tools->len; k++) {
+                if (g_ptr_array_index(all_tools, k) == tool) {
+                    indexed = TRUE;
+                    break;
+                }
+            }
+
+            if (!indexed)
+                g_ptr_array_add(all_tools, (gpointer)tool);
         }
     }
 }
