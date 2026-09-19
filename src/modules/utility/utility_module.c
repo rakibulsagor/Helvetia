@@ -585,117 +585,13 @@ static const HelvetiaSubcategory utility_subcategories[] = {
  * Custom Dashboard Layout (Helvetia Design)
  * ================================================================ */
 
-static void on_utility_card_clicked(GtkGestureClick *g, int n_press, double x, double y, gpointer data) {
-    (void)g; (void)n_press; (void)x; (void)y;
-    const HelvetiaTool *tool = data;
-    GtkWidget *widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(g));
-    GtkWidget *win = gtk_widget_get_ancestor(widget, HELVETIA_TYPE_WINDOW);
-    if (win) {
-        helvetia_window_open_tool(HELVETIA_WINDOW(win), tool);
-    }
-}
-
-static GtkWidget *utility_create_view(void) {
-    GtkWidget *paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_paned_set_wide_handle(GTK_PANED(paned), FALSE);
-    
-    /* LEFT PANE: Calculator & Tape */
-    GtkWidget *left_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
-    gtk_widget_set_margin_start(left_box, 24);
-    gtk_widget_set_margin_end(left_box, 24);
-    gtk_widget_set_margin_top(left_box, 24);
-    gtk_widget_set_margin_bottom(left_box, 24);
-    
-    GtkWidget *calc_header = gtk_label_new("Calculator & Tape");
-    gtk_widget_add_css_class(calc_header, "helvetia-card-title");
-    gtk_widget_set_halign(calc_header, GTK_ALIGN_START);
-    gtk_box_append(GTK_BOX(left_box), calc_header);
-    
-    GtkWidget *calc_widget = build_calc_sci(); /* Using base converter as placeholder for the big calculator */
-    gtk_box_append(GTK_BOX(left_box), calc_widget);
-    
-    gtk_paned_set_start_child(GTK_PANED(paned), left_box);
-    
-    /* RIGHT PANE: Installed Native Modules (12 Grid) */
-    GtkWidget *right_scroll = gtk_scrolled_window_new();
-    GtkWidget *right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
-    gtk_widget_set_margin_start(right_box, 24);
-    gtk_widget_set_margin_end(right_box, 24);
-    gtk_widget_set_margin_top(right_box, 24);
-    gtk_widget_set_margin_bottom(right_box, 24);
-    
-    GtkWidget *modules_header = gtk_label_new("Installed Native Modules");
-    gtk_widget_add_css_class(modules_header, "helvetia-card-title");
-    gtk_widget_set_halign(modules_header, GTK_ALIGN_START);
-    gtk_box_append(GTK_BOX(right_box), modules_header);
-    
-    /* Flowbox for tools */
-    GtkWidget *flowbox = gtk_flow_box_new();
-    gtk_widget_set_valign(flowbox, GTK_ALIGN_START);
-    gtk_flow_box_set_min_children_per_line(GTK_FLOW_BOX(flowbox), 2);
-    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(flowbox), 3);
-    gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(flowbox), GTK_SELECTION_NONE);
-    gtk_flow_box_set_row_spacing(GTK_FLOW_BOX(flowbox), 16);
-    gtk_flow_box_set_column_spacing(GTK_FLOW_BOX(flowbox), 16);
-    
-    /* Add the 12 tools (Mocked for now) */
-    const HelvetiaTool *tools[] = {
-        &tools_math[0],
-        &tools_units[0],
-        &tools_color[1],
-        &tools_gen[7],
-        &tools_gen[5],
-        &tools_gen[0],
-        &tools_math[7],
-        &tools_text[0],
-        &tools_gen[2],
-        &tools_date[2],
-        &tools_text[7],
-        &tools_math[1]
-    };
-    
-    for (int i = 0; i < 12; i++) {
-        GtkWidget *card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-        gtk_widget_add_css_class(card, "helvetia-card");
-        
-        GtkWidget *title = gtk_label_new(tools[i]->name);
-        gtk_widget_add_css_class(title, "helvetia-card-title");
-        gtk_widget_set_halign(title, GTK_ALIGN_START);
-        
-        GtkWidget *desc = gtk_label_new(tools[i]->description);
-        gtk_widget_add_css_class(desc, "helvetia-card-subtitle");
-        gtk_widget_set_halign(desc, GTK_ALIGN_START);
-        
-        gtk_box_append(GTK_BOX(card), title);
-        gtk_box_append(GTK_BOX(card), desc);
-        
-        GtkGesture *click = gtk_gesture_click_new();
-        g_signal_connect(click, "pressed", G_CALLBACK(on_utility_card_clicked), (gpointer)tools[i]);
-        gtk_widget_add_controller(card, GTK_EVENT_CONTROLLER(click));
-        gtk_widget_set_cursor_from_name(card, "pointer");
-        
-        gtk_flow_box_insert(GTK_FLOW_BOX(flowbox), card, -1);
-    }
-    
-    gtk_box_append(GTK_BOX(right_box), flowbox);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(right_scroll), right_box);
-    gtk_paned_set_end_child(GTK_PANED(paned), right_scroll);
-    
-    gtk_paned_set_position(GTK_PANED(paned), 360); /* 360px left pane */
-    
-    return paned;
-}
-
-/* ================================================================
- * Module descriptor & registration
- * ================================================================ */
 static const HelvetiaModule utility_module = {
     .id            = "utility",
     .name          = "Utilities",
     .icon_name     = "applications-utilities",
     .description   = "Calculators, generators, converters, and quick-reference tools — all offline.",
     .subcategories = utility_subcategories,
-    .create_view   = utility_create_view,
+    .create_view   = NULL,
     .on_activate   = NULL,
     .on_deactivate = NULL,
     .on_shutdown   = NULL,

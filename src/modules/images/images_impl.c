@@ -350,3 +350,123 @@ static GtkWidget *make_filter_tool(const char *label_text, int mode) {
 
 GtkWidget *build_image_grayscale(void) { return make_filter_tool("Convert to Grayscale", 0); }
 GtkWidget *build_image_invert   (void) { return make_filter_tool("Invert Colors",        1); }
+
+/* ================================================================
+ * Image Crop (convert)
+ * ================================================================ */
+typedef struct { GtkWidget *in_e, *out_e, *geom_e, *status; } ImgCropCtx;
+
+static void on_img_crop(GtkButton *btn, gpointer ud) {
+    (void)btn;
+    ImgCropCtx *ctx = ud;
+    const char *in = gtk_editable_get_text(GTK_EDITABLE(ctx->in_e));
+    const char *out = gtk_editable_get_text(GTK_EDITABLE(ctx->out_e));
+    const char *geom = gtk_editable_get_text(GTK_EDITABLE(ctx->geom_e));
+    
+    if (!in || !*in || !out || !*out || !geom || !*geom) {
+        gtk_label_set_text(GTK_LABEL(ctx->status), "⚠ Fill all fields");
+        return;
+    }
+    
+    char *qi = g_shell_quote(in);
+    char *qo = g_shell_quote(out);
+    char *qg = g_shell_quote(geom);
+    
+    char *cmd = g_strdup_printf("convert %s -crop %s %s 2>&1", qi, qg, qo);
+    g_free(qi); g_free(qo); g_free(qg);
+
+    char *res = hv_run_cmd(cmd);
+    g_free(cmd);
+    if (!res || !*res || strstr(res, "WARNING"))
+        gtk_label_set_text(GTK_LABEL(ctx->status), "✓ Image cropped!");
+    else
+        gtk_label_set_text(GTK_LABEL(ctx->status), res);
+    g_free(res);
+}
+
+GtkWidget *build_image_crop(void) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    GtkWidget *in_e, *out_e, *geom_e;
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Input Image:", &in_e, FALSE));
+    
+    GtkWidget *hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(hb), gtk_label_new("Geometry (WxH+X+Y):"));
+    geom_e = gtk_entry_new();
+    gtk_widget_set_hexpand(geom_e, TRUE);
+    gtk_entry_set_placeholder_text(GTK_ENTRY(geom_e), "e.g. 800x600+10+20");
+    gtk_box_append(GTK_BOX(hb), geom_e);
+    gtk_box_append(GTK_BOX(box), hb);
+    
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Output Image:", &out_e, TRUE));
+
+    GtkWidget *btn = hv_make_action_btn("Crop Image");
+    GtkWidget *status = hv_make_result_label();
+    
+    ImgCropCtx *ctx = g_new0(ImgCropCtx, 1);
+    ctx->in_e = in_e; ctx->out_e = out_e; ctx->geom_e = geom_e; ctx->status = status;
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_img_crop), ctx);
+    g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_free), ctx);
+
+    gtk_box_append(GTK_BOX(box), btn);
+    gtk_box_append(GTK_BOX(box), status);
+    return box;
+}
+
+/* ================================================================
+ * Image Blur (convert)
+ * ================================================================ */
+typedef struct { GtkWidget *in_e, *out_e, *sigma_spin, *status; } ImgBlurCtx;
+
+static void on_img_blur(GtkButton *btn, gpointer ud) {
+    (void)btn;
+    ImgBlurCtx *ctx = ud;
+    const char *in = gtk_editable_get_text(GTK_EDITABLE(ctx->in_e));
+    const char *out = gtk_editable_get_text(GTK_EDITABLE(ctx->out_e));
+    double sigma = gtk_spin_button_get_value(GTK_SPIN_BUTTON(ctx->sigma_spin));
+    
+    if (!in || !*in || !out || !*out) {
+        gtk_label_set_text(GTK_LABEL(ctx->status), "⚠ Fill all fields");
+        return;
+    }
+    
+    char *qi = g_shell_quote(in);
+    char *qo = g_shell_quote(out);
+    
+    char *cmd = g_strdup_printf("convert %s -blur 0x%.2f %s 2>&1", qi, sigma, qo);
+    g_free(qi); g_free(qo);
+
+    char *res = hv_run_cmd(cmd);
+    g_free(cmd);
+    if (!res || !*res || strstr(res, "WARNING"))
+        gtk_label_set_text(GTK_LABEL(ctx->status), "✓ Image blurred!");
+    else
+        gtk_label_set_text(GTK_LABEL(ctx->status), res);
+    g_free(res);
+}
+
+GtkWidget *build_image_blur(void) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    GtkWidget *in_e, *out_e;
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Input Image:", &in_e, FALSE));
+    
+    GtkWidget *hb = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(hb), gtk_label_new("Blur Amount (Sigma):"));
+    GtkWidget *spin = gtk_spin_button_new_with_range(0.1, 50.0, 0.5);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin), 2.0);
+    gtk_box_append(GTK_BOX(hb), spin);
+    gtk_box_append(GTK_BOX(box), hb);
+    
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Output Image:", &out_e, TRUE));
+
+    GtkWidget *btn = hv_make_action_btn("Blur Image");
+    GtkWidget *status = hv_make_result_label();
+    
+    ImgBlurCtx *ctx = g_new0(ImgBlurCtx, 1);
+    ctx->in_e = in_e; ctx->out_e = out_e; ctx->sigma_spin = spin; ctx->status = status;
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_img_blur), ctx);
+    g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_free), ctx);
+
+    gtk_box_append(GTK_BOX(box), btn);
+    gtk_box_append(GTK_BOX(box), status);
+    return box;
+}

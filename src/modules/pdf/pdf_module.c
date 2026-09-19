@@ -65,9 +65,9 @@ static const HelvetiaTool tools_optimization[] = {
 
 static const HelvetiaTool tools_conversion[] = {
     { "pdf_to_image", "PDF to Image", "PNG, JPG, TIFF, WEBP", "application-pdf-symbolic", (const char*[]){ "image", "pdf", NULL }, "pdf2image", build_pdf_to_image },
-    { "image_to_pdf", "Image to PDF", "Image to PDF", "application-pdf-symbolic", (const char*[]){ "image", "pdf", NULL }, "image2pdf", NULL },
+    { "image_to_pdf", "Image to PDF", "Image to PDF", "application-pdf-symbolic", (const char*[]){ "image", "pdf", NULL }, "image2pdf", build_image_to_pdf },
     { "pdf_to_text", "PDF to Text", "PDF to Text", "application-pdf-symbolic", (const char*[]){ "text", "pdf", NULL }, "pdf2text", build_pdf_to_text },
-    { "pdf_to_html", "PDF to HTML", "PDF to HTML", "application-pdf-symbolic", (const char*[]){ "html", "pdf", NULL }, "pdf2html", NULL },
+    { "pdf_to_html", "PDF to HTML", "PDF to HTML", "application-pdf-symbolic", (const char*[]){ "html", "pdf", NULL }, "pdf2html", build_pdf_to_html },
     { "pdf_to_docx", "PDF to DOCX", "PDF to DOCX", "application-pdf-symbolic", (const char*[]){ "docx", "pdf", NULL }, "pdf2docx", NULL },
     { "pdf_to_xlsx", "PDF to XLSX", "PDF to XLSX", "application-pdf-symbolic", (const char*[]){ "xlsx", "pdf", NULL }, "pdf2xlsx", NULL },
     { "pdf_to_pptx", "PDF to PPTX", "PDF to PPTX", "application-pdf-symbolic", (const char*[]){ "pptx", "pdf", NULL }, "pdf2pptx", NULL },

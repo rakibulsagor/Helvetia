@@ -836,3 +836,95 @@ GtkWidget *build_pdf_thumbnails(void) {
     
     return box;
 }
+
+/* ================================================================
+ * Image to PDF (convert)
+ * ================================================================ */
+static void on_image_to_pdf(GtkButton *btn, gpointer ud) {
+    (void)btn;
+    PdfCtx *ctx = ud;
+    const char *in = gtk_editable_get_text(GTK_EDITABLE(ctx->in_e));
+    const char *out = gtk_editable_get_text(GTK_EDITABLE(ctx->out_e));
+    if (!in || !*in || !out || !*out) {
+        gtk_label_set_text(GTK_LABEL(ctx->status), "⚠ Fill both paths");
+        return;
+    }
+    char *qi = g_shell_quote(in);
+    char *qo = g_shell_quote(out);
+    
+    char *cmd = g_strdup_printf("convert %s %s 2>&1", qi, qo);
+    g_free(qi); g_free(qo);
+
+    char *res = hv_run_cmd(cmd);
+    g_free(cmd);
+    if (!res || !*res || strstr(res, "WARNING"))
+        gtk_label_set_text(GTK_LABEL(ctx->status), "✓ Image converted to PDF!");
+    else
+        gtk_label_set_text(GTK_LABEL(ctx->status), res);
+    g_free(res);
+}
+
+GtkWidget *build_image_to_pdf(void) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    GtkWidget *in_e, *out_e;
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Input Image:", &in_e, FALSE));
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Output PDF:", &out_e, TRUE));
+
+    GtkWidget *btn = hv_make_action_btn("Convert to PDF");
+    GtkWidget *status = hv_make_result_label();
+    
+    PdfCtx *ctx = g_new0(PdfCtx, 1);
+    ctx->in_e = in_e; ctx->out_e = out_e; ctx->status = status;
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_image_to_pdf), ctx);
+    g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_free), ctx);
+
+    gtk_box_append(GTK_BOX(box), btn);
+    gtk_box_append(GTK_BOX(box), status);
+    return box;
+}
+
+/* ================================================================
+ * PDF to HTML (pdftohtml)
+ * ================================================================ */
+static void on_pdf_to_html(GtkButton *btn, gpointer ud) {
+    (void)btn;
+    PdfCtx *ctx = ud;
+    const char *in = gtk_editable_get_text(GTK_EDITABLE(ctx->in_e));
+    const char *out = gtk_editable_get_text(GTK_EDITABLE(ctx->out_e));
+    if (!in || !*in || !out || !*out) {
+        gtk_label_set_text(GTK_LABEL(ctx->status), "⚠ Fill both paths");
+        return;
+    }
+    char *qi = g_shell_quote(in);
+    char *qo = g_shell_quote(out);
+    
+    char *cmd = g_strdup_printf("pdftohtml -c -s %s %s 2>&1", qi, qo);
+    g_free(qi); g_free(qo);
+
+    char *res = hv_run_cmd(cmd);
+    g_free(cmd);
+    if (!res || !*res || strstr(res, "Page-"))
+        gtk_label_set_text(GTK_LABEL(ctx->status), "✓ PDF converted to HTML!");
+    else
+        gtk_label_set_text(GTK_LABEL(ctx->status), res);
+    g_free(res);
+}
+
+GtkWidget *build_pdf_to_html(void) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    GtkWidget *in_e, *out_e;
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Input PDF:", &in_e, FALSE));
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Output HTML:", &out_e, TRUE));
+
+    GtkWidget *btn = hv_make_action_btn("Convert to HTML");
+    GtkWidget *status = hv_make_result_label();
+    
+    PdfCtx *ctx = g_new0(PdfCtx, 1);
+    ctx->in_e = in_e; ctx->out_e = out_e; ctx->status = status;
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_pdf_to_html), ctx);
+    g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_free), ctx);
+
+    gtk_box_append(GTK_BOX(box), btn);
+    gtk_box_append(GTK_BOX(box), status);
+    return box;
+}

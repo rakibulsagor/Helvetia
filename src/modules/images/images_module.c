@@ -15,7 +15,7 @@ static const HelvetiaTool tools_viewing[] = {
 };
 
 static const HelvetiaTool tools_basic_editing[] = {
-    { "crop", "Crop", "Crop", "crop-symbolic", (const char*[]){ "crop", "images", NULL }, "crop", NULL },
+    { "crop", "Crop", "Crop", "crop-symbolic", (const char*[]){ "crop", "images", NULL }, "crop", build_image_crop },
     { "resize", "Resize", "Resize", "image-x-generic-symbolic", (const char*[]){ "resize", "images", NULL }, "resize", build_image_resize },
     { "rotate", "Rotate", "Rotate", "image-x-generic-symbolic", (const char*[]){ "rotate", "images", NULL }, "rotate", NULL },
     { "flip", "Flip", "Flip", "image-x-generic-symbolic", (const char*[]){ "flip", "images", NULL }, "flip", NULL },
@@ -43,7 +43,7 @@ static const HelvetiaTool tools_adjustments[] = {
 };
 
 static const HelvetiaTool tools_filters[] = {
-    { "blur", "Blur", "Gaussian, motion, radial", "image-x-generic-symbolic", (const char*[]){ "blur", "images", NULL }, "blur", NULL },
+    { "blur", "Blur", "Gaussian, motion, radial", "image-x-generic-symbolic", (const char*[]){ "blur", "images", NULL }, "blur", build_image_blur },
     { "sharpen", "Sharpen", "Sharpen", "image-x-generic-symbolic", (const char*[]){ "sharpen", "images", NULL }, "sharpen", NULL },
     { "unsharp_mask", "Unsharp Mask", "Unsharp Mask", "image-x-generic-symbolic", (const char*[]){ "images", "mask", "unsharp", NULL }, "unsharp-mask", NULL },
     { "noise_reduction", "Noise Reduction", "Noise Reduction", "image-x-generic-symbolic", (const char*[]){ "noise", "images", "reduction", NULL }, "noise-reduction", NULL },

@@ -68,17 +68,11 @@ static GtkWidget *make_tool_card(const HelvetiaTool *tool, HelvetiaWindow *win) 
 GtkWidget *helvetia_module_view_new(const HelvetiaModule *module, HelvetiaWindow *win) {
     if (!module || !module->subcategories) return NULL;
 
-    GtkWidget *scrolled = gtk_scrolled_window_new();
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled),
-                                   GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 24);
     gtk_widget_set_margin_start(main_box, 24);
     gtk_widget_set_margin_end(main_box, 24);
     gtk_widget_set_margin_top(main_box, 20);
     gtk_widget_set_margin_bottom(main_box, 24);
-
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), main_box);
 
     for (int i = 0; module->subcategories[i].name != NULL; i++) {
         const HelvetiaSubcategory *sub = &module->subcategories[i];
@@ -105,5 +99,5 @@ GtkWidget *helvetia_module_view_new(const HelvetiaModule *module, HelvetiaWindow
         }
     }
 
-    return scrolled;
+    return main_box;
 }

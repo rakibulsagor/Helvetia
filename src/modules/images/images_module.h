@@ -9,3 +9,5 @@ GtkWidget *build_image_converter (void);
 GtkWidget *build_image_resize    (void);
 GtkWidget *build_image_grayscale (void);
 GtkWidget *build_image_invert    (void);
+GtkWidget *build_image_crop      (void);
+GtkWidget *build_image_blur      (void);

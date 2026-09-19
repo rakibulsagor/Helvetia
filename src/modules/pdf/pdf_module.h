@@ -16,3 +16,5 @@ GtkWidget *build_pdf_decrypt(void);
 GtkWidget *build_pdf_compress(void);
 GtkWidget *build_pdf_viewer(void);
 GtkWidget *build_pdf_thumbnails(void);
+GtkWidget *build_image_to_pdf(void);
+GtkWidget *build_pdf_to_html(void);
