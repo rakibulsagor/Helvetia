@@ -98,3 +98,23 @@ const HelvetiaTool *helvetia_tool_registry_find_by_cli(const char *cli_command) 
     }
     return NULL;
 }
+
+guint helvetia_tool_registry_count(void) {
+    return all_tools ? all_tools->len : 0;
+}
+
+const HelvetiaTool *helvetia_tool_registry_get(guint index) {
+    if (!all_tools || index >= all_tools->len) return NULL;
+    return g_ptr_array_index(all_tools, index);
+}
+
+const HelvetiaTool *helvetia_tool_registry_find(const char *id) {
+    if (!all_tools || !id) return NULL;
+    for (guint i = 0; i < all_tools->len; i++) {
+        const HelvetiaTool *tool = g_ptr_array_index(all_tools, i);
+        if (tool->id && strcmp(tool->id, id) == 0) {
+            return tool;
+        }
+    }
+    return NULL;
+}

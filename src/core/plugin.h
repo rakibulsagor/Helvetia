@@ -4,6 +4,22 @@
 #define HELVETIA_PLUGIN_API_VERSION 1
 
 /**
+ * A single command a tool supports.
+ *
+ * Commands are invoked through "win.tool_action" with the tool's ID
+ * and this command's ID. The handler receives the tool's root view
+ * widget so it can reach into the tool's internal state.
+ */
+typedef struct {
+    const char *id;             /* e.g. "export", "reset", "apply"     */
+    const char *name;           /* display name: "Export…"             */
+    const char *icon_name;      /* optional symbolic icon              */
+    const char *accel;          /* optional accelerator, e.g. "<Control>e" */
+    const char *tooltip;        /* optional tooltip                    */
+    void (*activate)(GtkWidget *tool_view);   /* handler */
+} HelvetiaToolCommand;
+
+/**
  * HelvetiaTool — defines a single tool (e.g. "Base64 Encode").
  */
 typedef struct {
@@ -19,6 +35,15 @@ typedef struct {
      * If NULL, the tool is considered "Coming Soon".
      */
     GtkWidget *(*create_view)(void);
+    
+    void (*on_open)(GtkWidget *view);
+    void (*on_close)(GtkWidget *view);
+
+    /* NULL-terminated list of commands this tool supports */
+    const HelvetiaToolCommand *commands;
+
+    const char *(*file_filter_name)(void);
+    const char *(*file_filter_pattern)(void);
 } HelvetiaTool;
 
 /**

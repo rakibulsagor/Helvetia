@@ -35,6 +35,7 @@ static void on_startup(GApplication *app, gpointer user_data) {
     (void)user_data;
     g_action_map_add_action_entries(G_ACTION_MAP(app), app_actions, G_N_ELEMENTS(app_actions), app);
     helvetia_register_accelerators(GTK_APPLICATION(app));
+    register_tool_command_accels(GTK_APPLICATION(app));
 }
 
 static void on_activate(AdwApplication *app, gpointer user_data) {

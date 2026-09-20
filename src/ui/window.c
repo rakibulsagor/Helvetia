@@ -17,6 +17,11 @@ struct _HelvetiaWindow {
     GtkWidget *content_box;    /* holds search or module_stack */
     GtkWidget *favorites_window;
     GtkWidget *favorites_list;
+
+    AdwHeaderBar *tool_header;
+    GtkWidget    *tool_actions_box;   /* dynamic container for tool buttons */
+    const HelvetiaTool *current_tool;
+    GtkWidget *current_tool_view;
 };
 
 G_DEFINE_TYPE(HelvetiaWindow, helvetia_window, ADW_TYPE_APPLICATION_WINDOW)
@@ -26,8 +31,91 @@ static void on_save(GSimpleAction *action, GVariant *param, gpointer user_data) 
     g_print("Save triggered\n");
 }
 
+static void populate_tool_header(HelvetiaWindow *self, const HelvetiaTool *tool) {
+    if (!self->tool_actions_box) return;
+
+    /* Empty the box */
+    GtkWidget *child;
+    while ((child = gtk_widget_get_first_child(self->tool_actions_box)))
+        gtk_box_remove(GTK_BOX(self->tool_actions_box), child);
+
+    if (!tool || !tool->commands) return;
+
+    for (const HelvetiaToolCommand *c = tool->commands; c->id; c++) {
+        if (!c->icon_name) continue;   /* skip commands without icons */
+
+        GtkWidget *btn = gtk_button_new_from_icon_name(c->icon_name);
+        gtk_widget_add_css_class(btn, "flat");
+        if (c->tooltip)
+            gtk_widget_set_tooltip_text(btn, c->tooltip);
+
+        char *target = g_strdup_printf("('%s', '%s')", tool->id, c->id);
+        char *action = g_strdup_printf("win.tool_action::%s", target);
+        gtk_actionable_set_detailed_action_name(GTK_ACTIONABLE(btn), action);
+        g_free(target);
+        g_free(action);
+
+        gtk_box_append(GTK_BOX(self->tool_actions_box), btn);
+    }
+}
+
+static void on_tool_action(GSimpleAction *action, GVariant *param, gpointer user_data) {
+    HelvetiaWindow *self = HELVETIA_WINDOW(user_data);
+    (void)action;
+
+    const char *tool_id    = NULL;
+    const char *command_id = NULL;
+
+    g_variant_get(param, "(&s&s)", &tool_id, &command_id);
+
+    const HelvetiaTool *tool = NULL;
+
+    if (tool_id && *tool_id) {
+        tool = helvetia_tool_registry_find(tool_id);
+    } else {
+        tool = self->current_tool;
+    }
+
+    if (!tool) {
+        g_warning("tool_action: no tool resolved for id '%s'",
+                  tool_id ? tool_id : "(current)");
+        return;
+    }
+
+    if (self->current_tool != tool) {
+        helvetia_window_open_tool(self, tool);
+    }
+
+    if (!tool->commands) {
+        g_warning("tool_action: tool '%s' has no commands", tool->id);
+        return;
+    }
+
+    const HelvetiaToolCommand *cmd = NULL;
+    for (const HelvetiaToolCommand *c = tool->commands; c->id; c++) {
+        if (g_strcmp0(c->id, command_id) == 0) {
+            cmd = c;
+            break;
+        }
+    }
+
+    if (!cmd || !cmd->activate) {
+        g_warning("tool_action: tool '%s' has no command '%s'",
+                  tool->id, command_id ? command_id : "(null)");
+        return;
+    }
+
+    if (!self->current_tool_view) {
+        g_warning("tool_action: no view for tool '%s'", tool->id);
+        return;
+    }
+
+    cmd->activate(self->current_tool_view);
+}
+
 static const GActionEntry win_actions[] = {
     { .name = "save", .activate = on_save },
+    { .name = "tool_action", .activate = on_tool_action, .parameter_type = "(ss)" },
 };
 
 /* ============================================================
@@ -38,6 +126,16 @@ static const GActionEntry win_actions[] = {
 static void on_back_clicked(GtkButton *btn, gpointer user_data) {
     (void)btn;
     HelvetiaWindow *self = user_data;
+    
+    if (self->current_tool) {
+        if (self->current_tool->on_close && self->current_tool_view) {
+            self->current_tool->on_close(self->current_tool_view);
+        }
+        self->current_tool = NULL;
+        self->current_tool_view = NULL;
+        populate_tool_header(self, NULL);
+    }
+    
     gtk_stack_set_visible_child_name(GTK_STACK(self->outer_stack), "grid");
     gtk_editable_set_text(GTK_EDITABLE(self->search_entry), "");
 }
@@ -274,11 +372,23 @@ void helvetia_window_open_tool(HelvetiaWindow *self, const HelvetiaTool *tool) {
         gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), content_pad);
         gtk_box_append(GTK_BOX(page_box), scrolled);
 
+        g_object_set_data(G_OBJECT(page_box), "tool-view", tool_content);
         gtk_stack_add_named(GTK_STACK(self->tool_stack), page_box, tool->id);
     }
 
+    self->current_tool = tool;
+    
+    GtkWidget *page_box = gtk_stack_get_child_by_name(GTK_STACK(self->tool_stack), tool->id);
+    self->current_tool_view = g_object_get_data(G_OBJECT(page_box), "tool-view");
+
     gtk_stack_set_visible_child_name(GTK_STACK(self->tool_stack), tool->id);
     gtk_stack_set_visible_child_name(GTK_STACK(self->outer_stack), "tool");
+    
+    if (self->current_tool->on_open && self->current_tool_view) {
+        self->current_tool->on_open(self->current_tool_view);
+    }
+    
+    populate_tool_header(self, self->current_tool);
 }
 
 /* ============================================================
@@ -437,6 +547,7 @@ static void helvetia_window_init(HelvetiaWindow *self) {
 
     /* App Header / Search bar */
     GtkWidget *header_bar = adw_header_bar_new();
+    self->tool_header = ADW_HEADER_BAR(header_bar);
     
     GtkWidget *app_icon = gtk_image_new_from_icon_name("applications-utilities");
     gtk_image_set_pixel_size(GTK_IMAGE(app_icon), 24);
@@ -478,6 +589,10 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     adw_header_bar_pack_end(ADW_HEADER_BAR(header_bar), theme_btn);
     adw_header_bar_pack_end(ADW_HEADER_BAR(header_bar), favorites_btn);
     adw_header_bar_pack_end(ADW_HEADER_BAR(header_bar), stat_bar);
+    
+    self->tool_actions_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_add_css_class(self->tool_actions_box, "linked");
+    adw_header_bar_pack_end(ADW_HEADER_BAR(header_bar), self->tool_actions_box);
     
     adw_toolbar_view_add_top_bar(ADW_TOOLBAR_VIEW(toolbar_view), header_bar);
 

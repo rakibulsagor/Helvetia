@@ -1,4 +1,4 @@
-project('helvetia', 'c',
+project('helvetia', ['c', 'cpp'],
   version : '0.1.0',
   license : 'MIT',
   default_options : [
