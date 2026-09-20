@@ -1,5 +1,7 @@
 #include "pdf_shared.h"
 
+#include "../../../core/tasks/task_queue.h"
+
 /* ------------------------------------------------------------------ */
 /* Filters                                                            */
 /* ------------------------------------------------------------------ */
@@ -117,85 +119,58 @@ char *pdf_join_path(const char *dir, const char *name) {
 /* ------------------------------------------------------------------ */
 
 typedef struct {
-    GtkWidget     *tool_view;
-    char          *description;
     PdfTaskFunc    func;
-    gpointer       task_data;
-    GDestroyNotify task_data_free;
-    GAsyncReadyCallback done;
-} PdfTaskContext;
+    gpointer       data;
+    GDestroyNotify free_func;
+    GtkWidget     *tool_view;
+} PdfWorkerCtx;
 
-static void pdf_task_context_free(PdfTaskContext *ctx) {
-    g_free(ctx->description);
-    if (ctx->task_data_free)
-        ctx->task_data_free(ctx->task_data);
+static void pdf_worker_ctx_free(PdfWorkerCtx *ctx) {
+    if (ctx->free_func) ctx->free_func(ctx->data);
     g_free(ctx);
 }
 
-static void pdf_task_thread(GTask *task, gpointer source_object,
-                            gpointer task_data, GCancellable *cancellable) {
-    PdfTaskContext *ctx = (PdfTaskContext*)task_data;
+static void pdf_worker(GTask *gtask, gpointer source_object,
+                       gpointer task_data, GCancellable *cancellable) {
     (void)source_object;
-    ctx->func(task, ctx->tool_view, ctx->task_data, cancellable);
+    PdfWorkerCtx *ctx = task_data;
+    ctx->func(gtask, ctx->tool_view, ctx->data, cancellable);
 }
 
-static void pdf_task_done(GObject *source, GAsyncResult *result, gpointer user_data) {
-    GTask *task = G_TASK(result);
-    PdfTaskContext *ctx = (PdfTaskContext*)user_data;
-
-    if (ctx->done)
-        ctx->done(source, result, ctx->tool_view);
-
-    /* The GTask was created with a GDestroyNotify that runs
-       pdf_task_context_free when the task is finalized. */
-    (void)task;
-}
-
-void pdf_run_task_async(GtkWidget  *tool_view,
-                        const char *description,
-                        PdfTaskFunc func,
-                        gpointer    task_data,
-                        GDestroyNotify task_data_free,
-                        GAsyncReadyCallback done) {
-    PdfTaskContext *ctx = g_new0(PdfTaskContext, 1);
-    ctx->tool_view      = tool_view;
-    ctx->description    = g_strdup(description);
-    ctx->func           = func;
-    ctx->task_data      = task_data;
-    ctx->task_data_free = task_data_free;
-    ctx->done           = done;
-
-    GTask *task = g_task_new(NULL, NULL, pdf_task_done, ctx);
-    g_task_set_task_data(task,
-                         ctx,
-                         (GDestroyNotify)pdf_task_context_free);
-    g_task_run_in_thread(task, pdf_task_thread);
-    g_object_unref(task);
-
-    /* Optionally register with the window's task queue */
-    PdfTask *t = g_new0(PdfTask, 1);
-    t->status = PDF_TASK_RUNNING;
-    t->description = g_strdup(description);
-    pdf_task_register(tool_view, t);
-}
-
-/* ------------------------------------------------------------------ */
-/* Task queue integration                                             */
-/* ------------------------------------------------------------------ */
-
-/* The task queue is a bottom bar owned by the window. In this pass
-   we just emit a signal that the window listens for. A later pass
-   replaces this with a proper GTK list model. */
-void pdf_task_register(GtkWidget *tool_view, PdfTask *task) {
-    GtkWidget *root = GTK_WIDGET(gtk_widget_get_root(tool_view));
-    if (!root) return;
-
-    /* g_signal_emit_by_name(root, "task-started", task); */
-}
-
-void pdf_task_complete(PdfTask *task, const char *error) {
-    task->status = error ? PDF_TASK_FAILED : PDF_TASK_DONE;
+static void on_pdf_task_completed(HelvetiaTask *task, const char *error,
+                                  gpointer user_data) {
+    GtkWidget *tool_view = user_data;
     if (error)
-        task->error = g_strdup(error);
-    /* Real implementation notifies the window */
+        pdf_show_error(tool_view, error);
+    else
+        pdf_show_info(tool_view, helvetia_task_get_name(task));
+}
+
+void pdf_run_task_async(GtkWidget      *tool_view,
+                        const char     *description,
+                        PdfTaskFunc     func,
+                        gpointer        task_data,
+                        GDestroyNotify  task_data_free,
+                        GAsyncReadyCallback done) {
+    (void)done;
+
+    HelvetiaTask *task = helvetia_task_new(description, "pdf");
+
+    PdfWorkerCtx *ctx = g_new0(PdfWorkerCtx, 1);
+    ctx->func      = func;
+    ctx->data      = task_data;
+    ctx->free_func = task_data_free;
+    ctx->tool_view = tool_view;
+
+    helvetia_task_set_worker(task, pdf_worker, ctx,
+                             (GDestroyNotify)pdf_worker_ctx_free);
+
+    /* Submit to the global queue. The queue owns the reference now. */
+    HelvetiaTaskQueue *queue = helvetia_task_queue_get_default();
+    helvetia_task_queue_submit(queue, task);
+
+    /* Show a toast on completion, using the window's toast overlay.
+       Auto-disconnects if the tool view is destroyed first. */
+    g_signal_connect_object(task, "completed",
+                            G_CALLBACK(on_pdf_task_completed), tool_view, 0);
 }

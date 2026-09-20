@@ -1,5 +1,6 @@
 ui_sources = files(
   'window.c',
+  'task_strip.c',
   'module_view.c',
   'widgets.c',
   'templates/template_file_processor.c',
@@ -12,6 +13,6 @@ ui_sources = files(
 
 ui_lib = static_library('helvetia_ui',
   ui_sources,
-  dependencies        : [glib_dep, gtk_dep, adw_dep],
-  include_directories : include_directories('..'),
+  dependencies        : [glib_dep, gtk_dep, adw_dep, helvetia_tasks_dep],
+  include_directories : include_directories('.', '..', '../core'),
 )

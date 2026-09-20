@@ -3,10 +3,13 @@
 #include "../core/module_registry.h"
 #include "../core/tool_registry.h"
 #include "../core/favorites.h"
+#include "../core/tasks/task_queue.h"
 #include "module_view.h"
+#include "task_strip.h"
 
 struct _HelvetiaWindow {
     AdwApplicationWindow parent_instance;
+    GtkWidget *toolbar_view;     /* AdwToolbarView holding the app chrome */
     GtkWidget *outer_stack;    /* "grid" | "tool" */
     GtkWidget *dashboard_box;  /* holds all modules vertically */
     GtkWidget *dashboard_scroll;
@@ -22,6 +25,9 @@ struct _HelvetiaWindow {
     GtkWidget    *tool_actions_box;   /* dynamic container for tool buttons */
     const HelvetiaTool *current_tool;
     GtkWidget *current_tool_view;
+
+    HelvetiaTaskQueue *task_queue;
+    HelvetiaTaskStrip *task_strip;
 };
 
 G_DEFINE_TYPE(HelvetiaWindow, helvetia_window, ADW_TYPE_APPLICATION_WINDOW)
@@ -541,9 +547,9 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     g_object_unref(css);
 
     /* === Main content area === */
-    GtkWidget *toolbar_view = adw_toolbar_view_new();
+    self->toolbar_view = adw_toolbar_view_new();
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    adw_toolbar_view_set_content(ADW_TOOLBAR_VIEW(toolbar_view), main_box);
+    adw_toolbar_view_set_content(ADW_TOOLBAR_VIEW(self->toolbar_view), main_box);
 
     /* App Header / Search bar */
     GtkWidget *header_bar = adw_header_bar_new();
@@ -594,7 +600,7 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     gtk_widget_add_css_class(self->tool_actions_box, "linked");
     adw_header_bar_pack_end(ADW_HEADER_BAR(header_bar), self->tool_actions_box);
     
-    adw_toolbar_view_add_top_bar(ADW_TOOLBAR_VIEW(toolbar_view), header_bar);
+    adw_toolbar_view_add_top_bar(ADW_TOOLBAR_VIEW(self->toolbar_view), header_bar);
 
     /* outer_stack: "grid" page holds dashboard+search, "tool" page holds tool_stack */
     self->outer_stack = gtk_stack_new();
@@ -646,7 +652,13 @@ static void helvetia_window_init(HelvetiaWindow *self) {
     gtk_stack_add_named(GTK_STACK(self->outer_stack), self->tool_stack, "tool");
 
     gtk_box_append(GTK_BOX(main_box), self->outer_stack);
-    adw_application_window_set_content(ADW_APPLICATION_WINDOW(self), toolbar_view);
+    adw_application_window_set_content(ADW_APPLICATION_WINDOW(self), self->toolbar_view);
+
+    /* Task queue + strip */
+    self->task_queue = helvetia_task_queue_get_default();
+    self->task_strip = helvetia_task_strip_new(self->task_queue);
+    adw_toolbar_view_add_bottom_bar(ADW_TOOLBAR_VIEW(self->toolbar_view),
+                                    GTK_WIDGET(self->task_strip));
 
     /* Register modules */
     guint count = helvetia_module_registry_count();

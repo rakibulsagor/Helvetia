@@ -93,3 +93,31 @@
     border-bottom: 1px solid alpha(currentColor, 0.1);
     min-height: 48px;
 }
+
+/* ================================================================
+ * Task strip (background job queue)
+ * ================================================================ */
+.task-strip {
+    background-color: @window_bg_color;
+    border-top: 1px solid alpha(@borders, 0.5);
+    padding: 4px 0;
+}
+
+.task-strip row {
+    padding: 0;
+}
+
+.task-strip progressbar {
+    min-height: 4px;
+}
+
+.task-strip progressbar trough {
+    min-height: 4px;
+    border-radius: 2px;
+}
+
+.task-strip progressbar progress {
+    min-height: 4px;
+    border-radius: 2px;
+    background: var(--accent-bg-color);
+}

@@ -1,4 +1,5 @@
 subdir('db')
+subdir('tasks')
 
 core_sources = files(
   'module_registry.c',

@@ -7,25 +7,6 @@
 G_BEGIN_DECLS
 
 /* ------------------------------------------------------------------ */
-/* Task model                                                         */
-/* ------------------------------------------------------------------ */
-
-typedef enum {
-    PDF_TASK_PENDING,
-    PDF_TASK_RUNNING,
-    PDF_TASK_DONE,
-    PDF_TASK_FAILED,
-    PDF_TASK_CANCELLED,
-} PdfTaskStatus;
-
-typedef struct {
-    PdfTaskStatus status;
-    char         *description;      /* "Merging 3 files…" */
-    double        progress;         /* 0.0–1.0 */
-    char         *error;            /* NULL unless failed */
-} PdfTask;
-
-/* ------------------------------------------------------------------ */
 /* Shared helpers used by every PDF tool                              */
 /* ------------------------------------------------------------------ */
 
@@ -58,18 +39,15 @@ char          *pdf_join_path(const char *dir, const char *name);
 typedef void (*PdfTaskFunc)(GTask *task, gpointer source_object,
                             gpointer task_data, GCancellable *cancellable);
 
-/* Run `func` in a background thread, then call `done` on the main
-   thread with the result. The tool view is passed through unchanged
-   so the completion handler can update the UI. */
+/* Run `func` on a background thread via the global task queue. The
+   tool view is passed through unchanged so the completion handler can
+   update the UI. A completion toast (success or error) is shown
+   automatically in the window that owns `tool_view`. */
 void pdf_run_task_async(GtkWidget  *tool_view,
                         const char *description,
                         PdfTaskFunc func,
                         gpointer    task_data,
                         GDestroyNotify task_data_free,
                         GAsyncReadyCallback done);
-
-/* Register a running task with the window's bottom task queue. */
-void pdf_task_register(GtkWidget *tool_view, PdfTask *task);
-void pdf_task_complete(PdfTask *task, const char *error);
 
 G_END_DECLS
