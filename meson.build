@@ -19,6 +19,7 @@ math_dep    = meson.get_compiler('c').find_library('m', required : false)
 openssl_dep = dependency('openssl')
 json_c_dep  = dependency('json-c')
 libsodium_dep = dependency('libsodium')
+libarchive_dep = dependency('libarchive')
 
 # ---- Global config ----
 conf = configuration_data()

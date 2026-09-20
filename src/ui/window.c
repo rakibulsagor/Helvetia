@@ -1,5 +1,5 @@
 #include "window.h"
-#include "widgets.h"
+
 #include "../core/module_registry.h"
 #include "../core/tool_registry.h"
 #include "../core/favorites.h"
@@ -20,6 +20,15 @@ struct _HelvetiaWindow {
 };
 
 G_DEFINE_TYPE(HelvetiaWindow, helvetia_window, ADW_TYPE_APPLICATION_WINDOW)
+
+static void on_save(GSimpleAction *action, GVariant *param, gpointer user_data) {
+    (void)action; (void)param; (void)user_data;
+    g_print("Save triggered\n");
+}
+
+static const GActionEntry win_actions[] = {
+    { .name = "save", .activate = on_save },
+};
 
 /* ============================================================
  *  Tool navigation — open / close
@@ -408,6 +417,8 @@ static void helvetia_window_class_init(HelvetiaWindowClass *klass) {
 }
 
 static void helvetia_window_init(HelvetiaWindow *self) {
+    g_action_map_add_action_entries(G_ACTION_MAP(self), win_actions, G_N_ELEMENTS(win_actions), self);
+
     gtk_window_set_default_size(GTK_WINDOW(self), 1280, 800);
     gtk_window_set_title(GTK_WINDOW(self), "Helvetia — All-in-One Toolkit");
 

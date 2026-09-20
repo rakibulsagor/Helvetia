@@ -7,8 +7,9 @@
 
 static const HelvetiaTool tools_encryption[] = {
     { "file_encrypt", "File Encrypt", "AES-256, ChaCha20", "dialog-password-symbolic", (const char*[]){ "security", "file", "encrypt", NULL }, "file-encrypt", build_file_encrypt },
-    { "file_decrypt", "File Decrypt", "File Decrypt", "dialog-password-symbolic", (const char*[]){ "security", "decrypt", "file", NULL }, "file-decrypt", NULL },
-    { "folder_encrypt", "Folder Encrypt", "Folder Encrypt", "dialog-password-symbolic", (const char*[]){ "folder", "security", "encrypt", NULL }, "folder-encrypt", NULL },
+    { "file_decrypt", "File Decrypt", "File Decrypt", "dialog-password-symbolic", (const char*[]){ "security", "decrypt", "file", NULL }, "file-decrypt", build_file_decrypt },
+    { "folder_encrypt", "Folder Encrypt", "Folder Encrypt", "dialog-password-symbolic", (const char*[]){ "folder", "security", "encrypt", NULL }, "folder-encrypt", build_folder_encrypt },
+    { "folder_decrypt", "Folder Decrypt", "Folder Decrypt", "dialog-password-symbolic", (const char*[]){ "folder", "security", "decrypt", NULL }, "folder-decrypt", build_folder_decrypt },
     { "text_encrypt", "Text Encrypt", "Text Encrypt", "dialog-password-symbolic", (const char*[]){ "security", "text", "encrypt", NULL }, "text-encrypt", NULL },
     { "pgp_encrypt_decrypt", "PGP Encrypt / Decrypt", "GPG", "dialog-password-symbolic", (const char*[]){ "decrypt", "security", "pgp", "encrypt", NULL }, "pgp-encrypt-decrypt", NULL },
     { "key_generator", "Key Generator", "Key Generator", "network-server-symbolic", (const char*[]){ "generator", "security", "key", NULL }, "key-generator", NULL },

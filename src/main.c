@@ -10,8 +10,32 @@
 #include "core/plugin_loader.h"
 #include "core/tool_registry.h"
 #include "core/favorites.h"
+#include "core/favorites.h"
+#include "core/accelerators.h"
 
 static const HelvetiaTool *startup_tool = NULL;
+
+static void on_open(GSimpleAction *action, GVariant *param, gpointer user_data) {
+    (void)action; (void)param; (void)user_data;
+    g_print("Open triggered\n");
+}
+
+static void on_quit(GSimpleAction *action, GVariant *param, gpointer user_data) {
+    (void)action; (void)param;
+    GApplication *app = G_APPLICATION(user_data);
+    g_application_quit(app);
+}
+
+static const GActionEntry app_actions[] = {
+    { .name = "open", .activate = on_open },
+    { .name = "quit", .activate = on_quit },
+};
+
+static void on_startup(GApplication *app, gpointer user_data) {
+    (void)user_data;
+    g_action_map_add_action_entries(G_ACTION_MAP(app), app_actions, G_N_ELEMENTS(app_actions), app);
+    helvetia_register_accelerators(GTK_APPLICATION(app));
+}
 
 static void on_activate(AdwApplication *app, gpointer user_data) {
     (void)user_data;
@@ -56,6 +80,7 @@ int main(int argc, char **argv) {
     /* 4. Create and run the AdwApplication */
     AdwApplication *app =
         adw_application_new(APP_ID, G_APPLICATION_DEFAULT_FLAGS);
+    g_signal_connect(app, "startup", G_CALLBACK(on_startup), NULL);
     g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);
 
     /* Remove arguments so GTK doesn't complain about unknown CLI flags */

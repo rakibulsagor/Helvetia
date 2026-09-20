@@ -3,6 +3,7 @@ core_sources = files(
   'plugin_loader.c',
   'tool_registry.c',
   'favorites.c',
+  'accelerators.c',
 )
 
 core_lib = static_library('helvetia_core',
