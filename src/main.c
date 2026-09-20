@@ -49,9 +49,9 @@ static void on_activate(AdwApplication *app, gpointer user_data) {
 }
 
 int main(int argc, char **argv) {
-    /* 1. Initialise the module registry and tool registry */
-    helvetia_tool_registry_init();
+    /* 1. Initialise registries FIRST */
     helvetia_module_registry_init();
+    helvetia_tool_registry_init();
     helvetia_favorites_init();
 
     /* 2. Register all built-in (statically linked) modules */
