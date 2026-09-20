@@ -1,3 +1,5 @@
+subdir('db')
+
 core_sources = files(
   'module_registry.c',
   'plugin_loader.c',
@@ -8,6 +10,6 @@ core_sources = files(
 
 core_lib = static_library('helvetia_core',
   core_sources,
-  dependencies        : [glib_dep, gtk_dep, gmodule_dep],
+  dependencies        : [glib_dep, gtk_dep, gmodule_dep, helvetia_db_dep],
   include_directories : include_directories('.'),
 )
