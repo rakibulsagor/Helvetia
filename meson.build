@@ -51,8 +51,8 @@ add_project_arguments(sanitize_flags, language : ['c', 'cpp'])
 add_project_link_arguments(sanitize_flags, language : ['c', 'cpp'])
 
 # ---- Dependencies ----
-gtk_dep     = dependency('gtk4',      version : '>=4.10')
-adw_dep     = dependency('libadwaita-1', version : '>=1.2')
+gtk_dep     = dependency('gtk4',      version : '>= 4.16')
+adw_dep     = dependency('libadwaita-1', version : '>= 1.6')
 glib_dep    = dependency('glib-2.0',  version : '>=2.74')
 gio_dep     = dependency('gio-2.0')
 gobject_dep = dependency('gobject-2.0')
@@ -73,9 +73,6 @@ configure_file(output : 'config.h', configuration : conf)
 
 # Expose the build root as an include dir so generated config.h is reachable
 config_inc = include_directories('.')
-
-# ---- Sub-directories ----
-subdir('src')
 
 # ------------------------------------------------------------------ #
 # Test environment                                                   #
@@ -120,6 +117,9 @@ valgrind_args = [
   '--suppressions=' + valgrind_suppressions[0].full_path(),
 ]
 
+# ---- Sub-directories ----
+subdir('src')
+
 registry_test = executable('registry-test',
   'tests/test_registry.c',
   dependencies        : [glib_dep, gtk_dep, gmodule_dep],
@@ -130,6 +130,19 @@ test('registry', registry_test, env: test_env, suite: 'core')
 if get_option('valgrind') and valgrind.found()
   test('registry-valgrind', valgrind, args: valgrind_args + [registry_test], env: valgrind_env, timeout: 300, suite: ['core', 'valgrind'])
 endif
+
+# Accent color tests
+accent_test = executable('accent-test',
+  'tests/test_accent.c',
+  dependencies        : [glib_dep, gtk_dep, adw_dep],
+  include_directories : [config_inc])
+
+accents = ['blue', 'red', 'green', 'yellow', 'orange', 'purple', 'slate', 'pink', 'teal']
+foreach acc : accents
+  acc_env = environment()
+  acc_env.set('ADW_ACCENT_COLOR', acc)
+  test('accent-' + acc, accent_test, env: acc_env, suite: 'ui')
+endforeach
 
 quirc_test = executable('quirc-test',
   'tests/test_quirc.c',

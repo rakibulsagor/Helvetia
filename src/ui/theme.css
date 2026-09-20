@@ -1,7 +1,56 @@
-/* ================================================================
- * Helvetia — theme.css
- * Cleaned up to properly inherit Libadwaita dynamic colors.
- * ================================================================ */
+/* ================================================================= */
+/* Helvetia — CSS custom property aliases for libadwaita colors      */
+/* ================================================================= */
+
+:root {
+    /* ---------- Accent ---------- */
+    --accent-color:        @accent_color;
+    --accent-bg-color:     @accent_bg_color;
+    --accent-fg-color:     @accent_fg_color;
+
+    /* ---------- Semantic status ---------- */
+    --destructive-color:   @destructive_color;
+    --destructive-bg-color:@destructive_bg_color;
+    --destructive-fg-color:@destructive_fg_color;
+
+    --success-color:       @success_color;
+    --success-bg-color:    @success_bg_color;
+    --success-fg-color:    @success_fg_color;
+
+    --warning-color:       @warning_color;
+    --warning-bg-color:    @warning_bg_color;
+    --warning-fg-color:    @warning_fg_color;
+
+    --error-color:         @error_color;
+    --error-bg-color:      @error_bg_color;
+    --error-fg-color:      @error_fg_color;
+
+    /* ---------- Surfaces ---------- */
+    --window-bg-color:     @window_bg_color;
+    --window-fg-color:     @window_fg_color;
+    --view-bg-color:       @view_bg_color;
+    --view-fg-color:       @view_fg_color;
+    --headerbar-bg-color:  @headerbar_bg_color;
+    --headerbar-fg-color:  @headerbar_fg_color;
+    --card-bg-color:       @card_bg_color;
+    --card-fg-color:       @card_fg_color;
+    --popover-bg-color:    @popover_bg_color;
+    --popover-fg-color:    @popover_fg_color;
+    --sidebar-bg-color:    @sidebar_bg_color;
+    --sidebar-fg-color:    @sidebar_fg_color;
+
+    /* ---------- Utilities ---------- */
+    --border-color:        @borders;
+    --dim-label-color:     @dim_label_color;
+    --shade-color:         @shade_color;
+    --shade-fg-color:      alpha(@window_fg_color, 0.4);
+
+    /* ---------- Helvetia-specific composites ---------- */
+    --card-bg-color-hover: shade(@card_bg_color, 1.05);
+    --card-border-color:   alpha(@borders, 0.8);
+    --card-shadow:         0 1px 3px alpha(black, 0.06);
+    --card-shadow-hover:   0 2px 8px alpha(black, 0.12);
+}
 
 /* ================================================================
  * Typography & Helpers
@@ -24,29 +73,42 @@
 .helvetia-card {
     min-width: 220px;
     min-height: 130px;
-    background-color: alpha(currentColor, 0.03);
-    border: 1px solid alpha(currentColor, 0.1);
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--card-border-color);
     border-radius: 14px;
     padding: 16px;
     margin: 0;
     transition: all 150ms ease;
+    box-shadow: var(--card-shadow);
 }
 
 .helvetia-card:hover {
-    background-color: alpha(currentColor, 0.06);
-    border-color: @accent_color;
+    background-color: var(--card-bg-color-hover);
+    border-color: alpha(var(--accent-color), 0.4);
+    box-shadow: var(--card-shadow-hover);
     transform: translateY(-1px);
+}
+
+.helvetia-card:active {
+    box-shadow: none;
+}
+
+.helvetia-card:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
 }
 
 .helvetia-card-title {
     font-size: 15px;
     font-weight: 600;
     margin-bottom: 4px;
+    color: var(--window-fg-color);
 }
 
 .helvetia-card-subtitle {
     font-size: 12px;
     margin-bottom: 16px;
+    color: var(--dim-label-color);
 }
 
 /* ================================================================
@@ -56,9 +118,9 @@
     font-family: "JetBrains Mono", "Fira Code", monospace;
     font-size: 13px;
     padding: 10px 12px;
-    background-color: alpha(currentColor, 0.05);
+    background-color: var(--view-bg-color);
     border-radius: 6px;
-    border: 1px solid alpha(currentColor, 0.1);
+    border: 1px solid var(--border-color);
 }
 
 .helvetia-section-title {
@@ -80,20 +142,20 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    opacity: 0.6;
+    color: var(--dim-label-color);
     margin-top: 4px;
     margin-bottom: 2px;
 }
 
 .helvetia-badge-ready {
     font-size: 10px;
-    color: @success_color;
+    color: var(--success-color);
     margin-top: 4px;
 }
 
 .helvetia-topbar {
-    background-color: alpha(currentColor, 0.03);
-    border-bottom: 1px solid alpha(currentColor, 0.1);
+    background-color: var(--headerbar-bg-color);
+    border-bottom: 1px solid var(--border-color);
     min-height: 48px;
 }
 
@@ -101,8 +163,8 @@
  * Task strip (background job queue)
  * ================================================================ */
 .task-strip {
-    background-color: @window_bg_color;
-    border-top: 1px solid alpha(@borders, 0.5);
+    background-color: var(--window-bg-color);
+    border-top: 1px solid alpha(var(--border-color), 0.5);
     padding: 4px 0;
 }
 
@@ -117,10 +179,11 @@
 .task-strip progressbar trough {
     min-height: 4px;
     border-radius: 2px;
+    background-color: alpha(var(--window-fg-color), 0.1);
 }
 
 .task-strip progressbar progress {
     min-height: 4px;
     border-radius: 2px;
-    background: var(--accent-bg-color);
+    background-color: var(--accent-bg-color);
 }
