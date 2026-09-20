@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <gegl.h>
+#include "image_processing.h"
 
 /* ================================================================
  * Helpers shared across tools
@@ -3319,8 +3321,77 @@ static GtkWidget *make_simple_convert_tool(const char *in_label, const char *out
 GtkWidget *build_image_heic_to_jpg(void) {
     return make_simple_convert_tool("Input HEIC:","Output JPG:","Convert HEIC → JPG","-quality 92");
 }
+typedef struct { GtkWidget *in_e, *out_e, *status; } RawCtx;
+
+static void on_raw_convert(GtkButton *btn, gpointer ud) {
+    (void)btn;
+    RawCtx *ctx = ud;
+    const char *in = gtk_editable_get_text(GTK_EDITABLE(ctx->in_e));
+    const char *out = gtk_editable_get_text(GTK_EDITABLE(ctx->out_e));
+
+    if (!in || !*in || !out || !*out) {
+        gtk_label_set_text(GTK_LABEL(ctx->status), "⚠ Fill both paths");
+        return;
+    }
+
+    int width = 0, height = 0;
+    unsigned char *raw_pixels = decode_raw_file(in, &width, &height);
+    if (!raw_pixels) {
+        gtk_label_set_text(GTK_LABEL(ctx->status), "⚠ Failed to decode RAW file");
+        return;
+    }
+
+    GeglBuffer *processed_buffer = process_with_gegl(raw_pixels, width, height);
+    if (!processed_buffer) {
+        gtk_label_set_text(GTK_LABEL(ctx->status), "⚠ GEGL processing failed");
+        g_free(raw_pixels);
+        return;
+    }
+
+    /* Convert to GdkPixbuf and save */
+    GdkPixbuf *pb = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
+    if (pb) {
+        gegl_buffer_get(processed_buffer, GEGL_RECTANGLE(0, 0, width, height), 1.0, babl_format("R'G'B' u8"), gdk_pixbuf_get_pixels(pb), GEGL_AUTO_ROWSTRIDE, GEGL_ABYSS_NONE);
+        
+        GError *err = NULL;
+        gboolean ok = gdk_pixbuf_save(pb, out, "jpeg", &err, "quality", "95", NULL);
+
+        if (ok) {
+            gtk_label_set_text(GTK_LABEL(ctx->status), "✓ RAW converted and processed successfully!");
+        } else {
+            char msg[256];
+            snprintf(msg, sizeof msg, "⚠ %s", err ? err->message : "Save failed");
+            gtk_label_set_text(GTK_LABEL(ctx->status), msg);
+            if (err) g_error_free(err);
+        }
+        g_object_unref(pb);
+    } else {
+        gtk_label_set_text(GTK_LABEL(ctx->status), "⚠ Failed to create GdkPixbuf");
+    }
+
+    g_object_unref(processed_buffer);
+    g_free(raw_pixels);
+}
+
 GtkWidget *build_image_raw_to_jpg(void) {
-    return make_simple_convert_tool("Input RAW:","Output JPG:","Convert RAW → JPG","-quality 95");
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    GtkWidget *in_e, *out_e;
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Input RAW:", &in_e, FALSE));
+    gtk_box_append(GTK_BOX(box), hv_make_file_picker_row("Output JPG:", &out_e, TRUE));
+    GtkWidget *btn = hv_make_action_btn("Convert RAW → JPG");
+    GtkWidget *status = hv_make_result_label();
+
+    RawCtx *ctx = g_new0(RawCtx, 1);
+    ctx->in_e = in_e;
+    ctx->out_e = out_e;
+    ctx->status = status;
+
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_raw_convert), ctx);
+    g_signal_connect_swapped(box, "destroy", G_CALLBACK(g_free), ctx);
+
+    gtk_box_append(GTK_BOX(box), btn);
+    gtk_box_append(GTK_BOX(box), status);
+    return box;
 }
 GtkWidget *build_image_png_to_svg(void) {
     GtkWidget *box=gtk_box_new(GTK_ORIENTATION_VERTICAL,10);

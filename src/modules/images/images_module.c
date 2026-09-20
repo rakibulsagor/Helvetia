@@ -158,6 +158,12 @@ static const HelvetiaSubcategory images_subcategories[] = {
     { NULL, NULL }
 };
 
+#include <gegl.h>
+
+static void images_on_activate(void) {
+    gegl_init(NULL, NULL);
+}
+
 static const HelvetiaModule images_module = {
     .id            = "images",
     .name          = "Images",
@@ -165,7 +171,7 @@ static const HelvetiaModule images_module = {
     .description   = "From quick crops to full editing.",
     .subcategories = images_subcategories,
     .create_view   = NULL,
-    .on_activate   = NULL,
+    .on_activate   = images_on_activate,
     .on_deactivate = NULL,
     .on_shutdown   = NULL,
 };
