@@ -62,6 +62,8 @@ openssl_dep = dependency('openssl')
 json_c_dep  = dependency('json-c')
 libsodium_dep = dependency('libsodium')
 libarchive_dep = dependency('libarchive')
+gegl_dep    = dependency('gegl-0.4', version : '>= 0.4.0')
+libraw_dep  = dependency('libraw', version : '>= 0.20.0')
 
 # ---- Global config ----
 conf = configuration_data()
