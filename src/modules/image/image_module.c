@@ -3,6 +3,7 @@
 #include "tools/image_slideshow.h"
 #include "tools/image_thumbnail_grid.h"
 #include "tools/image_exif_viewer.h"
+#include "tools/image_metadata_inspector.h"
 #include <stddef.h>
 
 static const HelvetiaTool tool_image_viewer = {
@@ -54,6 +55,7 @@ static const HelvetiaTool category_viewing[] = {
     { .id = "image_slideshow", .name = "Image Slideshow", .description = "Present images full-screen with auto-advance", .icon_name = "media-playback-start-symbolic", .keywords = (const char*[]){ "slideshow", "presentation", "play", "auto", "advance", NULL }, .create_view = image_slideshow_create, .commands = image_slideshow_commands, .on_close = image_slideshow_on_close },
     { .id = "image_thumbnail_grid", .name = "Image Thumbnail Grid", .description = "Browse a folder as a grid of thumbnails", .icon_name = "view-grid-symbolic", .keywords = (const char*[]){ "thumbnail", "grid", "browse", "contact", "sheet", NULL }, .create_view = image_thumbnail_grid_create, .commands = image_thumbnail_grid_commands, .on_close = image_thumbnail_grid_on_close },
     { .id = "image_exif_viewer", .name = "EXIF Viewer", .description = "Inspect camera, lens, and GPS metadata", .icon_name = "camera-photo-symbolic", .keywords = (const char*[]){ "exif", "metadata", "camera", "lens", "gps", "aperture", "iso", NULL }, .create_view = image_exif_viewer_create, .commands = image_exif_viewer_commands, .on_close = image_exif_viewer_on_close },
+    { .id = "image_metadata_inspector", .name = "Metadata Inspector", .description = "Show all metadata: file, image, and EXIF", .icon_name = "document-properties-symbolic", .keywords = (const char*[]){ "metadata", "inspector", "file", "exif", "properties", "info", NULL }, .create_view = image_metadata_inspector_create, .commands = image_metadata_inspector_commands, .on_close = image_metadata_inspector_on_close },
     { NULL }
 };
 

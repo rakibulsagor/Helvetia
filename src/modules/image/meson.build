@@ -5,6 +5,7 @@ image_sources = files(
   'tools/image_slideshow.c',
   'tools/image_thumbnail_grid.c',
   'tools/image_exif_viewer.c',
+  'tools/image_metadata_inspector.c',
 )
 
 helvetia_image_lib = static_library('helvetia_image',
