@@ -13,6 +13,14 @@ static GtkWidget *make_tool_card(const HelvetiaTool *tool, HelvetiaWindow *win) 
     GtkWidget *card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_widget_add_css_class(card, "helvetia-card");
 
+    /* Fill horizontally within the assigned grid cell, but never
+       grow beyond the flow box's column width. */
+    gtk_widget_set_hexpand(card, TRUE);
+    gtk_widget_set_vexpand(card, FALSE);
+
+    /* Enforce a fixed minimum size */
+    gtk_widget_set_size_request(card, 220, 130);
+
     /* Make card clickable */
     GtkGesture *click = gtk_gesture_click_new();
     CardCtx *ctx = g_new(CardCtx, 1);
@@ -31,7 +39,7 @@ static GtkWidget *make_tool_card(const HelvetiaTool *tool, HelvetiaWindow *win) 
 
     if (tool->icon_name) {
         GtkWidget *icon = gtk_image_new_from_icon_name(tool->icon_name);
-        gtk_image_set_pixel_size(GTK_IMAGE(icon), 16);
+        gtk_image_set_pixel_size(GTK_IMAGE(icon), 24); /* Changed to 24 for better visibility */
         gtk_box_append(GTK_BOX(header), icon);
     }
 
@@ -39,6 +47,9 @@ static GtkWidget *make_tool_card(const HelvetiaTool *tool, HelvetiaWindow *win) 
     gtk_widget_add_css_class(title, "helvetia-card-title");
     gtk_widget_set_halign(title, GTK_ALIGN_START);
     gtk_widget_set_hexpand(title, TRUE);
+    gtk_label_set_wrap(GTK_LABEL(title), TRUE);
+    gtk_label_set_wrap_mode(GTK_LABEL(title), PANGO_WRAP_WORD_CHAR);
+    gtk_label_set_lines(GTK_LABEL(title), 2);
     gtk_label_set_ellipsize(GTK_LABEL(title), PANGO_ELLIPSIZE_END);
     gtk_box_append(GTK_BOX(header), title);
 
@@ -48,11 +59,17 @@ static GtkWidget *make_tool_card(const HelvetiaTool *tool, HelvetiaWindow *win) 
         GtkWidget *sub = gtk_label_new(tool->description);
         gtk_widget_add_css_class(sub, "helvetia-card-subtitle");
         gtk_widget_set_halign(sub, GTK_ALIGN_START);
-        gtk_label_set_ellipsize(GTK_LABEL(sub), PANGO_ELLIPSIZE_END);
-        gtk_label_set_lines(GTK_LABEL(sub), 2);
         gtk_label_set_wrap(GTK_LABEL(sub), TRUE);
+        gtk_label_set_wrap_mode(GTK_LABEL(sub), PANGO_WRAP_WORD_CHAR);
+        gtk_label_set_lines(GTK_LABEL(sub), 2);
+        gtk_label_set_ellipsize(GTK_LABEL(sub), PANGO_ELLIPSIZE_END);
         gtk_box_append(GTK_BOX(card), sub);
     }
+
+    /* Spacer pushes the status pill to the bottom */
+    GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_vexpand(spacer, TRUE);
+    gtk_box_append(GTK_BOX(card), spacer);
 
     /* Badge if functional */
     if (tool->create_view) {
@@ -84,11 +101,13 @@ GtkWidget *helvetia_module_view_new(const HelvetiaModule *module, HelvetiaWindow
 
         GtkWidget *flowbox = gtk_flow_box_new();
         gtk_widget_set_valign(flowbox, GTK_ALIGN_START);
-        gtk_flow_box_set_min_children_per_line(GTK_FLOW_BOX(flowbox), 2);
-        gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(flowbox), 5);
+        gtk_widget_set_hexpand(flowbox, TRUE);
         gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(flowbox), GTK_SELECTION_NONE);
-        gtk_flow_box_set_row_spacing(GTK_FLOW_BOX(flowbox), 12);
+        gtk_flow_box_set_homogeneous(GTK_FLOW_BOX(flowbox), TRUE);
         gtk_flow_box_set_column_spacing(GTK_FLOW_BOX(flowbox), 12);
+        gtk_flow_box_set_row_spacing(GTK_FLOW_BOX(flowbox), 12);
+        gtk_flow_box_set_min_children_per_line(GTK_FLOW_BOX(flowbox), 2);
+        gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(flowbox), 4);
         gtk_box_append(GTK_BOX(main_box), flowbox);
 
         if (sub->tools) {

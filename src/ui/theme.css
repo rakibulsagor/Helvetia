@@ -22,10 +22,13 @@
  * Tool cards
  * ================================================================ */
 .helvetia-card {
+    min-width: 220px;
+    min-height: 130px;
     background-color: alpha(currentColor, 0.03);
     border: 1px solid alpha(currentColor, 0.1);
     border-radius: 14px;
-    padding: 18px;
+    padding: 16px;
+    margin: 0;
     transition: all 150ms ease;
 }
 
