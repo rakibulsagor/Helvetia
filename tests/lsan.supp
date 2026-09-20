@@ -1,0 +1,23 @@
+# tests/lsan.supp
+#
+# LeakSanitizer suppressions — same false positives as Valgrind,
+# different syntax.
+
+leak:g_type_register_static
+leak:g_type_register_static_simple
+leak:g_quark_from_static_string
+leak:g_quark_from_string
+leak:gtk_init
+leak:gtk_init_check
+leak:gtk_settings_get_default
+leak:gdk_display_get_default
+leak:gdk_display_open
+leak:adw_style_manager_get_default
+leak:g_bus_get_sync
+leak:g_dbus_connection_new_for_address_sync
+leak:FcConfigInit
+leak:FcConfigParseAndLoad
+leak:pango_font_map_create_context
+leak:sqlite3_initialize
+leak:sodium_init
+leak:libqpdf

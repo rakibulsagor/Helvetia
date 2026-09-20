@@ -10,6 +10,46 @@ project('helvetia', ['c', 'cpp'],
 
 add_project_arguments('-Wno-pedantic', language : 'c')
 
+# ------------------------------------------------------------------ #
+# Sanitizer flags                                                    #
+# ------------------------------------------------------------------ #
+
+cc  = meson.get_compiler('c')
+cpp = meson.get_compiler('cpp')
+
+sanitize_choice = get_option('sanitize')
+sanitize_flags  = []
+
+if sanitize_choice != 'none'
+  # ASan, UBSan, TSan — mutually exclusive except address+undefined
+  if sanitize_choice == 'address,undefined'
+    sanitize_flags = ['-fsanitize=address,undefined',
+                      '-fno-omit-frame-pointer',
+                      '-fno-common']
+  else
+    sanitize_flags = ['-fsanitize=' + sanitize_choice,
+                      '-fno-omit-frame-pointer',
+                      '-fno-common']
+  endif
+
+  # TSan needs special handling: gtk_init() is not thread-safe under TSan
+  if sanitize_choice == 'thread'
+    sanitize_flags += ['-fPIE', '-pie']
+  endif
+
+  if not cc.has_multi_arguments(sanitize_flags)
+    error('Compiler does not support -fsanitize=' + sanitize_choice)
+  endif
+endif
+
+# Coverage
+if get_option('coverage')
+  sanitize_flags += ['--coverage', '-fprofile-arcs', '-ftest-coverage']
+endif
+
+add_project_arguments(sanitize_flags, language : ['c', 'cpp'])
+add_project_link_arguments(sanitize_flags, language : ['c', 'cpp'])
+
 # ---- Dependencies ----
 gtk_dep     = dependency('gtk4',      version : '>=4.10')
 adw_dep     = dependency('libadwaita-1', version : '>=1.2')
@@ -37,16 +77,86 @@ config_inc = include_directories('.')
 # ---- Sub-directories ----
 subdir('src')
 
+# ------------------------------------------------------------------ #
+# Test environment                                                   #
+# ------------------------------------------------------------------ #
+
+test_env = environment()
+test_env.set('G_DEBUG', 'fatal-warnings,fatal-criticals')
+test_env.set('G_SLICE', 'always-malloc')
+test_env.set('MALLOC_CHECK_', '3')
+
+# ASan options when the app is built with -Dsanitize=address
+test_env.set('ASAN_OPTIONS',
+  'detect_leaks=1:' +
+  'abort_on_error=1:' +
+  'strict_string_checks=1:' +
+  'detect_stack_use_after_return=1:' +
+  'check_initialization_order=1:' +
+  'print_stacktrace=1:' +
+  'halt_on_error=1')
+
+test_env.set('UBSAN_OPTIONS',
+  'print_stacktrace=1:' +
+  'halt_on_error=1:' +
+  'abort_on_error=1')
+
+valgrind = find_program('valgrind', required : get_option('valgrind'))
+valgrind_suppressions = files('tests/valgrind.supp')
+
+valgrind_env = environment()
+valgrind_env.set('G_SLICE', 'always-malloc')
+valgrind_env.set('G_DEBUG', 'gc-friendly')
+
+valgrind_args = [
+  '--tool=memcheck',
+  '--leak-check=full',
+  '--show-leak-kinds=definite,indirect,possible',
+  '--errors-for-leak-kinds=definite,indirect',
+  '--track-origins=yes',
+  '--error-exitcode=42',
+  '--num-callers=30',
+  '--gen-suppressions=all',
+  '--suppressions=' + valgrind_suppressions[0].full_path(),
+]
+
 registry_test = executable('registry-test',
   'tests/test_registry.c',
   dependencies        : [glib_dep, gtk_dep, gmodule_dep],
   link_with           : core_lib,
   include_directories : [include_directories('src'), config_inc])
-test('registry', registry_test)
+
+test('registry', registry_test, env: test_env, suite: 'core')
+if get_option('valgrind') and valgrind.found()
+  test('registry-valgrind', valgrind, args: valgrind_args + [registry_test], env: valgrind_env, timeout: 300, suite: ['core', 'valgrind'])
+endif
 
 quirc_test = executable('quirc-test',
   'tests/test_quirc.c',
   dependencies        : [glib_dep, gtk_dep, math_dep],
   link_with           : utility_lib,
   include_directories : [include_directories('src'), config_inc])
-test('quirc', quirc_test)
+
+test('quirc', quirc_test, env: test_env, suite: 'utility')
+if get_option('valgrind') and valgrind.found()
+  test('quirc-valgrind', valgrind, args: valgrind_args + [quirc_test], env: valgrind_env, timeout: 300, suite: ['utility', 'valgrind'])
+endif
+
+
+
+# ------------------------------------------------------------------ #
+# Aggregate target: run all tests under Valgrind                     #
+# ------------------------------------------------------------------ #
+
+if get_option('valgrind') and valgrind.found()
+  run_target('test-valgrind',
+    command : [find_program('tests/run_valgrind_all.sh'),
+               meson.project_build_root()])
+endif
+
+# Aggregate target: build with ASan and run tests
+if get_option('sanitize') != 'none'
+  run_target('test-sanitized',
+    command : [find_program('tests/run_sanitized_tests.sh'),
+               meson.project_build_root()])
+endif

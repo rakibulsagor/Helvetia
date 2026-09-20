@@ -1,0 +1,126 @@
+# tests/valgrind.supp
+#
+# Suppressions for GLib, GTK4, GObject, and libadwaita.
+# These libraries intentionally keep global caches and one-time
+# allocations alive for the lifetime of the process. Valgrind
+# cannot know they are intentional.
+
+{
+   glib_gobject_type_registration
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:g_type_register_static
+}
+
+{
+   glib_gobject_type_registration_slow
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:g_type_register_static_simple
+}
+
+{
+   glib_quark_table
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:g_quark_from_static_string
+}
+
+{
+   glib_atomic_initialization
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:g_atomic_*
+}
+
+{
+   gtk_init_globals
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:gtk_init*
+}
+
+{
+   gtk_settings_singleton
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:gtk_settings_get_default
+}
+
+{
+   gdk_display_singleton
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:gdk_display_get_default
+}
+
+{
+   gdk_wayland_or_x11_init
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:gdk_*_display_open
+}
+
+{
+   fontconfig_cache
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:FcConfig*
+}
+
+{
+   pango_font_cache
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:pango_*
+}
+
+{
+   gio_extension_registry
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:g_io_extension_point_get_extensions
+}
+
+{
+   adw_style_manager_singleton
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:adw_style_manager_get_default
+}
+
+{
+   dbus_connection_cache
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:g_bus_get_sync
+}
+
+{
+   sqlite_library_init
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:sqlite3_initialize
+}
+
+{
+   sodium_global_state
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:sodium_init
+}

@@ -33,5 +33,12 @@ if get_option('build_tests')
   test('qpdf-wrapper', qpdf_test,
        args : ['pages', meson.current_source_dir() / 'test.pdf'],
        should_fail : false,
-       timeout : 30)
+       env: test_env,
+       timeout : 30, suite: 'pdf')
+  if get_option('valgrind') and valgrind.found()
+    test('qpdf-wrapper-valgrind', valgrind,
+         args : valgrind_args + [qpdf_test, 'pages', meson.current_source_dir() / 'test.pdf'],
+         env : valgrind_env,
+         timeout : 300, suite: ['pdf', 'valgrind'])
+  endif
 endif

@@ -1,2 +1,13 @@
 option('build_tests', type : 'boolean', value : true,
        description : 'Build test executables')
+
+option('sanitize', type : 'combo',
+       choices : ['none', 'address', 'thread', 'undefined', 'address,undefined'],
+       value : 'none',
+       description : 'Enable compiler sanitizers (build with -Dsanitize=address)')
+
+option('valgrind', type : 'boolean', value : false,
+       description : 'Register Valgrind-wrapped test targets')
+
+option('coverage', type : 'boolean', value : false,
+       description : 'Enable gcov code coverage instrumentation')

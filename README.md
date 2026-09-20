@@ -75,3 +75,40 @@ Drop the `.so` into the plugin directory (set via `PLUGIN_DIR` in `meson.build`)
 
 ## License
 MIT
+## Memory Safety
+
+Helvetia is built with three test configurations:
+
+### Standard build (fast)
+```bash
+meson setup build -Dbuild_tests=true
+meson test -C build
+```
+
+### Sanitized build (ASan + UBSan)
+Catches buffer overflows, use-after-free, memory leaks, and undefined behavior.
+```bash
+meson setup build-asan -Dsanitize=address,undefined -Dbuild_tests=true
+meson compile -C build-asan
+meson test -C build-asan
+```
+
+### Valgrind build (thorough leak audit)
+```bash
+meson setup build-valgrind -Dvalgrind=true -Dbuild_tests=true
+meson compile -C build-valgrind
+meson test -C build-valgrind --suite valgrind
+```
+
+### Run the full app under Valgrind
+```bash
+G_SLICE=always-malloc valgrind \
+  --leak-check=full \
+  --suppressions=tests/valgrind.supp \
+  --log-file=valgrind-app.log \
+  ./build-valgrind/src/helvetia
+```
+
+Suppressions for GLib/GTK/Pango intentional leaks live in
+`tests/valgrind.supp` and `tests/lsan.supp`. Real leaks in Helvetia
+code should always be fixed, never suppressed.
