@@ -64,6 +64,7 @@ libsodium_dep = dependency('libsodium')
 libarchive_dep = dependency('libarchive')
 gegl_dep    = dependency('gegl-0.4', version : '>= 0.4.0')
 libraw_dep  = dependency('libraw', version : '>= 0.20.0')
+exif_dep    = dependency('libexif')
 
 # ---- Global config ----
 conf = configuration_data()

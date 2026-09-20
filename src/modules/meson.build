@@ -4,7 +4,8 @@ subdir('utility')
 modules_libs += utility_lib
 
 subdir('pdf')
-subdir('images')
+subdir('image')
+modules_libs += helvetia_image_lib
 subdir('media')
 subdir('documents')
 subdir('convert')

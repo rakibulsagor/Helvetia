@@ -1,0 +1,274 @@
+#include "image_shared.h"
+#include <string.h>
+#include <glib/gstdio.h>
+
+/* ------------------------------------------------------------------ */
+/* Filters                                                            */
+/* ------------------------------------------------------------------ */
+
+GtkFileFilter *image_filter_images(void) {
+    GtkFileFilter *f = gtk_file_filter_new();
+    gtk_file_filter_set_name(f, "Images");
+    gtk_file_filter_add_mime_type(f, "image/*");
+
+    const char *patterns[] = {
+        "*.png", "*.jpg", "*.jpeg", "*.jpe",
+        "*.gif", "*.webp", "*.bmp", "*.tiff", "*.tif",
+        "*.svg", "*.avif", "*.heic", "*.heif", "*.ico",
+        "*.ppm", "*.pgm", "*.pbm", "*.pnm", "*.tga",
+        "*.dng", "*.cr2", "*.cr3", "*.nef", "*.arw",
+        "*.raf", "*.orf", "*.rw2", "*.pef", "*.srw",
+        NULL
+    };
+    for (int i = 0; patterns[i]; i++)
+        gtk_file_filter_add_pattern(f, patterns[i]);
+
+    return f;
+}
+
+GtkFileFilter *image_filter_all(void) {
+    GtkFileFilter *f = gtk_file_filter_new();
+    gtk_file_filter_set_name(f, "All files");
+    gtk_file_filter_add_pattern(f, "*");
+    return f;
+}
+
+GListStore *image_filter_store_full(void) {
+    GListStore *store = g_list_store_new(GTK_TYPE_FILE_FILTER);
+    g_list_store_append(store, image_filter_images());
+    g_list_store_append(store, image_filter_all());
+    return store;
+}
+
+/* ------------------------------------------------------------------ */
+/* Extension helpers                                                  */
+/* ------------------------------------------------------------------ */
+
+char *image_get_extension(const char *path) {
+    if (!path) return NULL;
+    const char *dot = strrchr(path, '.');
+    if (!dot || dot == path) return NULL;
+    return g_utf8_strdown(dot + 1, -1);
+}
+
+gboolean image_is_supported(const char *path) {
+    char *ext = image_get_extension(path);
+    if (!ext) return FALSE;
+
+    static const char *supported[] = {
+        "png", "jpg", "jpeg", "jpe", "gif", "webp", "bmp",
+        "tiff", "tif", "svg", "avif", "heic", "heif", "ico",
+        "ppm", "pgm", "pbm", "pnm", "tga",
+        "dng", "cr2", "cr3", "nef", "arw", "raf", "orf",
+        "rw2", "pef", "srw",
+        NULL
+    };
+    for (int i = 0; supported[i]; i++) {
+        if (g_strcmp0(ext, supported[i]) == 0) {
+            g_free(ext);
+            return TRUE;
+        }
+    }
+    g_free(ext);
+    return FALSE;
+}
+
+char *image_format_size(guint64 bytes) {
+    const char *units[] = {"B", "KB", "MB", "GB", "TB"};
+    double value = (double)bytes;
+    int unit = 0;
+    while (value >= 1024.0 && unit < 4) {
+        value /= 1024.0;
+        unit++;
+    }
+    return g_strdup_printf("%.1f %s", value, units[unit]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Toasts                                                             */
+/* ------------------------------------------------------------------ */
+
+static AdwToastOverlay *find_toast_overlay(GtkWidget *widget) {
+    GtkRoot *root = gtk_widget_get_root(widget);
+    if (!root) return NULL;
+
+    GtkWidget *child = gtk_window_get_child(GTK_WINDOW(root));
+    while (child) {
+        if (ADW_IS_TOAST_OVERLAY(child))
+            return ADW_TOAST_OVERLAY(child);
+
+        GtkWidget *next = NULL;
+        if (ADW_IS_TOOLBAR_VIEW(child))
+            next = adw_toolbar_view_get_content(ADW_TOOLBAR_VIEW(child));
+
+        child = next ? next : gtk_widget_get_first_child(child);
+    }
+    return NULL;
+}
+
+void image_show_error(GtkWidget *widget, const char *message) {
+    AdwToastOverlay *overlay = find_toast_overlay(widget);
+    if (overlay) {
+        AdwToast *toast = adw_toast_new(message);
+        adw_toast_set_timeout(toast, 5);
+        adw_toast_overlay_add_toast(overlay, toast);
+    } else {
+        g_warning("image: %s", message);
+    }
+}
+
+void image_show_info(GtkWidget *widget, const char *message) {
+    AdwToastOverlay *overlay = find_toast_overlay(widget);
+    if (overlay) {
+        AdwToast *toast = adw_toast_new(message);
+        adw_toast_set_timeout(toast, 3);
+        adw_toast_overlay_add_toast(overlay, toast);
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Drop zone                                                          */
+/* ------------------------------------------------------------------ */
+
+typedef struct {
+    ImageDropCallback on_file;
+    gpointer          user_data;
+} DropZoneData;
+
+static void drop_zone_data_free(DropZoneData *d) {
+    g_free(d);
+}
+
+/* Called when the user picks a file via the file dialog */
+static void on_file_dialog_finished(GObject *source, GAsyncResult *result,
+                                    gpointer user_data) {
+    GtkWidget *widget = user_data;
+    DropZoneData *d = g_object_get_data(G_OBJECT(widget), "drop-zone-data");
+
+    GError *error = NULL;
+    GFile *file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(source),
+                                              result, &error);
+    if (error) {
+        if (!g_error_matches(error, GTK_DIALOG_ERROR, GTK_DIALOG_ERROR_DISMISSED))
+            image_show_error(widget, error->message);
+        g_error_free(error);
+        return;
+    }
+
+    char *path = g_file_get_path(file);
+    g_object_unref(file);
+
+    if (path && d && d->on_file)
+        d->on_file(path, d->user_data);
+
+    g_free(path);
+}
+
+/* Clicked the drop zone */
+static void on_drop_zone_clicked(GtkButton *btn, gpointer user_data) {
+    (void)user_data;
+    GtkWidget *widget = GTK_WIDGET(btn);
+
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(dialog, "Open image");
+    gtk_file_dialog_set_accept_label(dialog, "Open");
+
+    GListStore *filters = image_filter_store_full();
+    gtk_file_dialog_set_filters(dialog, G_LIST_MODEL(filters));
+
+    gtk_file_dialog_open(dialog,
+                         GTK_WINDOW(gtk_widget_get_root(widget)),
+                         NULL, on_file_dialog_finished, widget);
+
+    g_object_unref(dialog);
+    g_object_unref(filters);
+}
+
+/* Drag-and-drop file received */
+static gboolean on_drop(GtkDropTarget *target, const GValue *value,
+                        double x, double y, gpointer user_data) {
+    (void)target; (void)x; (void)y;
+    GtkWidget *widget = user_data;
+    DropZoneData *d = g_object_get_data(G_OBJECT(widget), "drop-zone-data");
+
+    if (!G_VALUE_HOLDS(value, G_TYPE_FILE))
+        return FALSE;
+
+    GFile *file = g_value_get_object(value);
+    if (!file) return FALSE;
+
+    char *path = g_file_get_path(file);
+    if (!path) return FALSE;
+
+    if (!image_is_supported(path)) {
+        image_show_error(widget, "Unsupported image format");
+        g_free(path);
+        return FALSE;
+    }
+
+    if (d && d->on_file)
+        d->on_file(path, d->user_data);
+
+    g_free(path);
+    return TRUE;
+}
+
+GtkWidget *image_build_drop_zone(const char *hint_text,
+                                  ImageDropCallback on_file,
+                                  gpointer user_data) {
+    GtkWidget *btn = gtk_button_new();
+    gtk_widget_add_css_class(btn, "image-drop-zone");
+    gtk_widget_set_hexpand(btn, TRUE);
+    gtk_widget_set_vexpand(btn, TRUE);
+    gtk_widget_set_size_request(btn, 300, 200);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
+    gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_start(box, 32);
+    gtk_widget_set_margin_end(box, 32);
+    gtk_widget_set_margin_top(box, 32);
+    gtk_widget_set_margin_bottom(box, 32);
+
+    GtkWidget *icon = gtk_image_new_from_icon_name("image-x-generic-symbolic");
+    gtk_image_set_pixel_size(GTK_IMAGE(icon), 48);
+    gtk_widget_add_css_class(icon, "image-drop-zone-icon");
+
+    GtkWidget *title = gtk_label_new("Click to select a file");
+    gtk_widget_add_css_class(title, "title-3");
+
+    GtkWidget *or_label = gtk_label_new("or drag and drop");
+    gtk_widget_add_css_class(or_label, "dim-label");
+
+    GtkWidget *hint = gtk_label_new(hint_text ? hint_text : "Image file");
+    gtk_widget_add_css_class(hint, "dim-label");
+
+    GtkWidget *privacy = gtk_label_new("Your files never leave your device.");
+    gtk_widget_add_css_class(privacy, "dim-label");
+    gtk_widget_add_css_class(privacy, "caption");
+
+    gtk_box_append(GTK_BOX(box), icon);
+    gtk_box_append(GTK_BOX(box), title);
+    gtk_box_append(GTK_BOX(box), or_label);
+    gtk_box_append(GTK_BOX(box), hint);
+    gtk_box_append(GTK_BOX(box), privacy);
+
+    gtk_button_set_child(GTK_BUTTON(btn), box);
+
+    /* Store callback data */
+    DropZoneData *d = g_new0(DropZoneData, 1);
+    d->on_file = on_file;
+    d->user_data = user_data;
+    g_object_set_data_full(G_OBJECT(btn), "drop-zone-data", d,
+                           (GDestroyNotify)drop_zone_data_free);
+
+    /* Wire click */
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_drop_zone_clicked), NULL);
+
+    /* Wire drop */
+    GtkDropTarget *target = gtk_drop_target_new(G_TYPE_FILE, GDK_ACTION_COPY);
+    g_signal_connect(target, "drop", G_CALLBACK(on_drop), btn);
+    gtk_widget_add_controller(btn, GTK_EVENT_CONTROLLER(target));
+
+    return btn;
+}
