@@ -1,7 +1,13 @@
 ui_sources = files(
   'window.c',
   'module_view.c',
-  'widgets.c'
+  'widgets.c',
+  'templates/template_file_processor.c',
+  'templates/template_generator.c',
+  'templates/template_converter.c',
+  'templates/template_lookup.c',
+  'templates/template_viewer.c',
+  'templates/template_calculator.c'
 )
 
 ui_lib = static_library('helvetia_ui',
