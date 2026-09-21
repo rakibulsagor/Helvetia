@@ -1,6 +1,5 @@
 #include <gtk/gtk.h>
 #include <adwaita.h>
-#include <math.h>
 
 #include "../image_shared.h"
 #include "image_filter_struct.h"
@@ -167,7 +166,6 @@ static GtkWidget *build_editor_shell(FilterState *st, GtkWidget **out_sliders_bo
     return stack;
 }
 
-static inline double clamp01(double v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
 static inline int clampi(int v, int min, int max) { return v < min ? min : (v > max ? max : v); }
 
 /* ================================================================== */
