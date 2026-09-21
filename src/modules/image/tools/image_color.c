@@ -525,6 +525,10 @@ GtkWidget *image_saturation_vibrance_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)on_undo,
+        (ImageToolCallback)sv_on_reset,
+        root);
 
     GtkWidget *sliders;
     GtkWidget *stack = build_editor_shell(st, &sliders, "satvib",
@@ -607,6 +611,10 @@ GtkWidget *image_hue_shift_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)on_undo,
+        (ImageToolCallback)hs_on_reset,
+        root);
 
     GtkWidget *sliders;
     GtkWidget *stack = build_editor_shell(st, &sliders, "hue",
@@ -694,6 +702,10 @@ GtkWidget *image_white_balance_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)on_undo,
+        (ImageToolCallback)wb_on_reset,
+        root);
 
     GtkWidget *sliders;
     GtkWidget *stack = build_editor_shell(st, &sliders, "wb",
@@ -806,6 +818,10 @@ GtkWidget *image_color_balance_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)on_undo,
+        (ImageToolCallback)cb_on_reset,
+        root);
 
     GtkWidget *sliders;
     GtkWidget *stack = build_editor_shell(st, &sliders, "cb",

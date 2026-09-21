@@ -524,6 +524,10 @@ GtkWidget *image_blur_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)on_undo,
+        (ImageToolCallback)bl_on_reset,
+        root);
 
     GtkWidget *sliders;
     GtkWidget *stack = build_shell(st, &sliders, "Image file",
@@ -617,6 +621,10 @@ GtkWidget *image_sharpen_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)on_undo,
+        (ImageToolCallback)sh_on_reset,
+        root);
 
     GtkWidget *sliders;
     GtkWidget *stack = build_shell(st, &sliders, "Image file",
@@ -704,6 +712,10 @@ GtkWidget *image_unsharp_mask_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)on_undo,
+        (ImageToolCallback)us_on_reset,
+        root);
 
     GtkWidget *sliders;
     GtkWidget *stack = build_shell(st, &sliders, "Image file",

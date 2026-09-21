@@ -255,6 +255,10 @@ GtkWidget *image_resize_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->base.root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)geo_undo,
+        (ImageToolCallback)geo_reset,
+        root);
 
     GtkWidget *stack = gtk_stack_new();
     gtk_widget_set_vexpand(stack, TRUE);
@@ -411,6 +415,10 @@ GtkWidget *image_rotate_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->base.root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)geo_undo,
+        (ImageToolCallback)geo_reset,
+        root);
 
     GtkWidget *stack = gtk_stack_new();
     gtk_widget_set_vexpand(stack, TRUE);
@@ -538,6 +546,10 @@ GtkWidget *image_flip_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->base.root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)geo_undo,
+        (ImageToolCallback)geo_reset,
+        root);
 
     GtkWidget *stack = gtk_stack_new();
     gtk_widget_set_vexpand(stack, TRUE);
@@ -678,6 +690,10 @@ GtkWidget *image_canvas_resize_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->base.root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)geo_undo,
+        (ImageToolCallback)geo_reset,
+        root);
 
     GtkWidget *stack = gtk_stack_new();
     gtk_widget_set_vexpand(stack, TRUE);

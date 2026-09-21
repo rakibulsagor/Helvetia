@@ -338,6 +338,10 @@ GtkWidget *image_brightness_contrast_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)on_undo,
+        (ImageToolCallback)on_reset,
+        root);
 
     GtkWidget *stack = gtk_stack_new();
     gtk_stack_set_transition_type(GTK_STACK(stack),

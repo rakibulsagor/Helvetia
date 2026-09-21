@@ -70,6 +70,17 @@ GtkWidget *image_new_image_button(ImageDropCallback on_file,
                                    gpointer          user_data);
 
 /* ------------------------------------------------------------------ */
+/* Ctrl+Z / Ctrl+R shortcuts                                          */
+/* ------------------------------------------------------------------ */
+
+typedef void (*ImageToolCallback)(GtkButton *btn, gpointer user_data);
+
+void image_install_edit_shortcuts(GtkWidget         *root,
+                                   ImageToolCallback  on_undo,
+                                   ImageToolCallback  on_reset,
+                                   gpointer           user_data);
+
+/* ------------------------------------------------------------------ */
 /* Undo / Reset support                                               */
 /* ------------------------------------------------------------------ */
 

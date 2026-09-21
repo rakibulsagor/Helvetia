@@ -390,6 +390,52 @@ GtkWidget *image_new_image_button(ImageDropCallback on_file,
 }
 
 /* ------------------------------------------------------------------ */
+/* Ctrl+Z / Ctrl+R shortcuts                                          */
+/* ------------------------------------------------------------------ */
+
+typedef struct {
+    ImageToolCallback on_undo;
+    ImageToolCallback on_reset;
+    gpointer          user_data;
+} ShortcutData;
+
+static gboolean on_shortcut_key(GtkEventControllerKey *ctrl,
+                                 guint keyval, guint keycode,
+                                 GdkModifierType mods, gpointer user_data) {
+    (void)ctrl; (void)keycode;
+    ShortcutData *d = user_data;
+
+    if (!(mods & GDK_CONTROL_MASK)) return FALSE;
+    if (mods & GDK_SHIFT_MASK) return FALSE;
+
+    if ((keyval == GDK_KEY_z || keyval == GDK_KEY_Z) && d->on_undo) {
+        d->on_undo(NULL, d->user_data);
+        return TRUE;
+    }
+    if ((keyval == GDK_KEY_r || keyval == GDK_KEY_R) && d->on_reset) {
+        d->on_reset(NULL, d->user_data);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void image_install_edit_shortcuts(GtkWidget         *root,
+                                   ImageToolCallback  on_undo,
+                                   ImageToolCallback  on_reset,
+                                   gpointer           user_data) {
+    if (!root) return;
+    ShortcutData *d = g_new0(ShortcutData, 1);
+    d->on_undo = on_undo;
+    d->on_reset = on_reset;
+    d->user_data = user_data;
+
+    GtkEventController *ctrl = gtk_event_controller_key_new();
+    g_signal_connect(ctrl, "key-pressed", G_CALLBACK(on_shortcut_key), d);
+    gtk_widget_add_controller(root, ctrl);
+    g_object_set_data_full(G_OBJECT(ctrl), "shortcut-data", d, g_free);
+}
+
+/* ------------------------------------------------------------------ */
 /* Undo stack                                                         */
 /* ------------------------------------------------------------------ */
 

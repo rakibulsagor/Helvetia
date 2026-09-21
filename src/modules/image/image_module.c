@@ -15,6 +15,9 @@
 #include "tools/image_color.h"
 #include "tools/image_tone.h"
 #include "tools/image_sharpen.h"
+#include "tools/image_filter_color.h"
+#include "tools/image_filter_art.h"
+#include "tools/image_filter_struct.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -58,6 +61,18 @@ static const HelvetiaTool category_filters[] = {
     { .id = "image_blur", .name = "Blur", .description = "Soften the image with Gaussian, box, or motion blur", .icon_name = "blur-symbolic", .keywords = (const char*[]){ "blur", "soften", "gaussian", "motion", "box", NULL }, .create_view = image_blur_create, .commands = image_blur_commands, .on_close = image_blur_on_close },
     { .id = "image_sharpen", .name = "Sharpen", .description = "Increase edge contrast", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "sharpen", "crisp", "edges", "contrast", NULL }, .create_view = image_sharpen_create, .commands = image_sharpen_commands, .on_close = image_sharpen_on_close },
     { .id = "image_unsharp_mask", .name = "Unsharp Mask", .description = "Professional sharpening with radius and threshold", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "unsharp", "mask", "sharpening", "amount", "radius", "threshold", NULL }, .create_view = image_unsharp_mask_create, .commands = image_unsharp_mask_commands, .on_close = image_unsharp_mask_on_close },
+    { .id = "image_sepia", .name = "Sepia", .description = "Classic warm tone", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "sepia", "warm", "vintage", "brown", NULL }, .create_view = image_sepia_create, .commands = image_sepia_commands, .on_close = image_sepia_on_close },
+    { .id = "image_grayscale", .name = "Grayscale", .description = "Convert to black and white", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "grayscale", "monochrome", "bw", "black", "white", NULL }, .create_view = image_grayscale_create, .commands = image_grayscale_commands, .on_close = image_grayscale_on_close },
+    { .id = "image_invert", .name = "Invert", .description = "Invert all colors", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "invert", "negative", "colors", NULL }, .create_view = image_invert_create, .commands = image_invert_commands, .on_close = image_invert_on_close },
+    { .id = "image_threshold", .name = "Threshold", .description = "Binarize into pure black and white", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "threshold", "binary", "bw", "contrast", NULL }, .create_view = image_threshold_create, .commands = image_threshold_commands, .on_close = image_threshold_on_close },
+    { .id = "image_posterize", .name = "Posterize", .description = "Reduce color depth", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "posterize", "reduce", "colors", "depth", NULL }, .create_view = image_posterize_create, .commands = image_posterize_commands, .on_close = image_posterize_on_close },
+    { .id = "image_vignette", .name = "Vignette", .description = "Darken image corners", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "vignette", "darken", "corners", "lens", NULL }, .create_view = image_vignette_create, .commands = image_vignette_commands, .on_close = image_vignette_on_close },
+    { .id = "image_film_grain", .name = "Film Grain", .description = "Add cinematic noise", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "film", "grain", "noise", "cinematic", NULL }, .create_view = image_film_grain_create, .commands = image_film_grain_commands, .on_close = image_film_grain_on_close },
+    { .id = "image_glow", .name = "Glow", .description = "Add soft light bleed", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "glow", "bloom", "soft", "light", NULL }, .create_view = image_glow_create, .commands = image_glow_commands, .on_close = image_glow_on_close },
+    { .id = "image_emboss", .name = "Emboss", .description = "3D relief effect", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "emboss", "3d", "relief", "bump", NULL }, .create_view = image_emboss_create, .commands = image_emboss_commands, .on_close = image_emboss_on_close },
+    { .id = "image_edge_detect", .name = "Edge Detect", .description = "Find and highlight edges", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "edge", "detect", "laplace", "sobel", NULL }, .create_view = image_edge_detect_create, .commands = image_edge_detect_commands, .on_close = image_edge_detect_on_close },
+    { .id = "image_pixelate", .name = "Pixelate", .description = "Blocky downsampling", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "pixelate", "blocks", "downsample", "retro", NULL }, .create_view = image_pixelate_create, .commands = image_pixelate_commands, .on_close = image_pixelate_on_close },
+    { .id = "image_mosaic", .name = "Mosaic", .description = "Tiled mosaic effect", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "mosaic", "tiles", "blocks", NULL }, .create_view = image_mosaic_create, .commands = image_mosaic_commands, .on_close = image_mosaic_on_close },
     { 0 }
 };
 

@@ -55,11 +55,8 @@ static void populate_tool_header(HelvetiaWindow *self, const HelvetiaTool *tool)
         if (c->tooltip)
             gtk_widget_set_tooltip_text(btn, c->tooltip);
 
-        char *target = g_strdup_printf("('%s', '%s')", tool->id, c->id);
-        char *action = g_strdup_printf("win.tool_action::%s", target);
-        gtk_actionable_set_detailed_action_name(GTK_ACTIONABLE(btn), action);
-        g_free(target);
-        g_free(action);
+        gtk_actionable_set_action_name(GTK_ACTIONABLE(btn), "win.tool_action");
+        gtk_actionable_set_action_target(GTK_ACTIONABLE(btn), "(ss)", tool->id, c->id);
 
         gtk_box_append(GTK_BOX(self->tool_actions_box), btn);
     }

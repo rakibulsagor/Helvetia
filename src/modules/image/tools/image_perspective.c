@@ -220,6 +220,10 @@ GtkWidget *image_perspective_create(void) {
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
+    image_install_edit_shortcuts(root,
+        (ImageToolCallback)persp_undo,
+        (ImageToolCallback)persp_reset,
+        root);
 
     GtkWidget *stack = gtk_stack_new();
     gtk_widget_set_vexpand(stack, TRUE);
