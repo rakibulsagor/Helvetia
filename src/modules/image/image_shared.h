@@ -61,4 +61,12 @@ void image_save_pixbuf_dialog(GtkWidget *parent,
 /* Compute the currently displayed pixbuf as a GdkPixbuf from a GTK picture */
 GdkPixbuf *image_picture_get_pixbuf(GtkPicture *picture);
 
+/*
+ * Create a button that opens a file dialog and calls on_file with the
+ * chosen image path. Used as the "New Image…" button in tool toolbars.
+ * The callback is the same one passed to image_build_drop_zone().
+ */
+GtkWidget *image_new_image_button(ImageDropCallback on_file,
+                                   gpointer          user_data);
+
 G_END_DECLS

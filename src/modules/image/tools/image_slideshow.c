@@ -318,6 +318,8 @@ GtkWidget *image_slideshow_create(void) {
     gtk_box_append(GTK_BOX(controls), loop_sw);
     gtk_box_append(GTK_BOX(controls), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(controls), fs);
+    gtk_box_append(GTK_BOX(controls), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    gtk_box_append(GTK_BOX(controls), image_new_image_button(on_drop, root));
     gtk_box_append(GTK_BOX(controls), sp2);
 
     gtk_box_append(GTK_BOX(viewer), picture);

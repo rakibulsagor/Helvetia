@@ -504,6 +504,8 @@ GtkWidget *image_thumbnail_grid_create(void) {
     gtk_box_append(GTK_BOX(toolbar), lb_sw);
     gtk_box_append(GTK_BOX(toolbar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(toolbar), exp_btn);
+    gtk_box_append(GTK_BOX(toolbar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    gtk_box_append(GTK_BOX(toolbar), image_new_image_button(on_drop, root));
 
     GtkWidget *flow = gtk_flow_box_new();
     gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(flow), GTK_SELECTION_NONE);

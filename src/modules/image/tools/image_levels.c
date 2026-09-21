@@ -583,6 +583,7 @@ GtkWidget *image_levels_create(void) {
     gtk_widget_add_css_class(save, "flat");
 
     gtk_box_append(GTK_BOX(btn_row), btn_sp);
+    gtk_box_append(GTK_BOX(btn_row), image_new_image_button(on_drop, root));
     gtk_box_append(GTK_BOX(btn_row), reset);
     gtk_box_append(GTK_BOX(btn_row), save);
 

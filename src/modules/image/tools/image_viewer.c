@@ -541,6 +541,8 @@ static GtkWidget *build_viewer_ui(ImageViewerState *st) {
     gtk_box_append(GTK_BOX(toolbar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(toolbar), rot_ccw);
     gtk_box_append(GTK_BOX(toolbar), rot_cw);
+    gtk_box_append(GTK_BOX(toolbar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    gtk_box_append(GTK_BOX(toolbar), image_new_image_button(on_drop_file, st->root));
     gtk_box_append(GTK_BOX(toolbar), spacer);
     gtk_box_append(GTK_BOX(toolbar), info_label);
 

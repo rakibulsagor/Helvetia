@@ -335,6 +335,7 @@ GtkWidget *image_brightness_contrast_create(void) {
     gtk_box_append(GTK_BOX(bar_row1), st->contrast_lbl);
 
     gtk_box_append(GTK_BOX(bar), bar_row1);
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(on_drop, root));
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), st->reset_btn);
     gtk_box_append(GTK_BOX(bar), st->save_btn);

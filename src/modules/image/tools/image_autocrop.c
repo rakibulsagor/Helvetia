@@ -184,6 +184,7 @@ GtkWidget *image_straighten_create(void) {
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
     gtk_box_append(GTK_BOX(bar), sp);
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(straighten_on_drop, root));
 
     GtkWidget *apply = gtk_button_new_with_label("Apply");
     gtk_widget_add_css_class(apply, "suggested-action");
@@ -388,6 +389,7 @@ GtkWidget *image_autocrop_create(void) {
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
     gtk_box_append(GTK_BOX(bar), sp);
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(autocrop_on_drop, root));
 
     GtkWidget *apply = gtk_button_new_with_label("Auto-crop");
     gtk_widget_add_css_class(apply, "suggested-action");

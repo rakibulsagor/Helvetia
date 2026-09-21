@@ -247,6 +247,7 @@ GtkWidget *image_resize_create(void) {
     st->ratio_switch = gtk_switch_new();
     gtk_switch_set_active(GTK_SWITCH(st->ratio_switch), TRUE);
     gtk_box_append(GTK_BOX(bar), st->ratio_switch);
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(resize_on_drop, root));
 
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
@@ -402,6 +403,7 @@ GtkWidget *image_rotate_create(void) {
     gtk_box_append(GTK_BOX(bar), ccw);
     gtk_box_append(GTK_BOX(bar), cw);
     gtk_box_append(GTK_BOX(bar), r180);
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(rotate_on_drop, root));
 
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
@@ -509,6 +511,7 @@ GtkWidget *image_flip_create(void) {
     const char *dirs[] = {"Horizontal", "Vertical", NULL};
     GtkWidget *dd = gtk_drop_down_new_from_strings(dirs);
     gtk_box_append(GTK_BOX(bar), dd);
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(flip_on_drop, root));
 
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
@@ -642,6 +645,7 @@ GtkWidget *image_canvas_resize_create(void) {
     st->h_entry = gtk_entry_new();
     gtk_widget_set_size_request(st->h_entry, 80, -1);
     gtk_box_append(GTK_BOX(bar), st->h_entry);
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(canvas_resize_on_drop, root));
 
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);

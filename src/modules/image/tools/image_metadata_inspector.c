@@ -474,6 +474,7 @@ GtkWidget *image_metadata_inspector_create(void) {
     gtk_box_append(GTK_BOX(header), title_box);
     gtk_box_append(GTK_BOX(header), file_lbl);
     gtk_box_append(GTK_BOX(header), count_lbl);
+    gtk_box_append(GTK_BOX(header), image_new_image_button(on_drop, root));
 
     GtkWidget *list = gtk_list_box_new();
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_NONE);

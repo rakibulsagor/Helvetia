@@ -366,3 +366,25 @@ void image_save_pixbuf_dialog(GtkWidget *parent,
     g_object_unref(dlg);
     g_object_unref(fs);
 }
+
+/* ------------------------------------------------------------------ */
+/* New Image button — same callback as drop zone                      */
+/* ------------------------------------------------------------------ */
+
+GtkWidget *image_new_image_button(ImageDropCallback on_file,
+                                   gpointer          user_data) {
+    GtkWidget *btn = gtk_button_new_with_label("New Image…");
+    gtk_widget_add_css_class(btn, "flat");
+    gtk_widget_set_tooltip_text(btn, "Open a different image");
+
+    DropZoneData *d = g_new0(DropZoneData, 1);
+    d->on_file = on_file;
+    d->user_data = user_data;
+    g_object_set_data_full(G_OBJECT(btn), "drop-zone-data", d,
+                           (GDestroyNotify)drop_zone_data_free);
+
+    /* Reuse the same dialog launcher as the drop zone */
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_drop_zone_clicked), NULL);
+
+    return btn;
+}

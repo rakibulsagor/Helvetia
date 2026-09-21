@@ -176,6 +176,14 @@ GtkWidget *image_perspective_create(void) {
     gtk_widget_set_margin_top(opts, 8);
     gtk_widget_set_margin_bottom(opts, 8);
 
+    GtkWidget *top_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget *top_sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(top_sp, TRUE);
+    gtk_box_append(GTK_BOX(top_row), top_sp);
+    gtk_box_append(GTK_BOX(top_row),
+                   image_new_image_button(on_drop, root));
+    gtk_box_append(GTK_BOX(opts), top_row);
+
     gtk_box_append(GTK_BOX(opts), make_slider("TL X", &st->tl_x, 0, 1, root));
     gtk_box_append(GTK_BOX(opts), make_slider("TL Y", &st->tl_y, 0, 1, root));
     gtk_box_append(GTK_BOX(opts), make_slider("TR X", &st->tr_x, 0, 1, root));

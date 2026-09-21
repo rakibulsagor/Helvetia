@@ -456,6 +456,7 @@ GtkWidget *image_crop_create(void) {
     gtk_box_append(GTK_BOX(toolbar), hint);
     gtk_box_append(GTK_BOX(toolbar), ratio_lbl);
     gtk_box_append(GTK_BOX(toolbar), ratio_dd);
+    gtk_box_append(GTK_BOX(toolbar), image_new_image_button(on_drop, root));
     gtk_box_append(GTK_BOX(toolbar), clear);
     gtk_box_append(GTK_BOX(toolbar), apply);
     gtk_box_append(GTK_BOX(toolbar), save);
