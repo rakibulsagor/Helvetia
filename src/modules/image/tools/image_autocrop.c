@@ -11,11 +11,66 @@
 
 typedef struct {
     GdkPixbuf *original;
+    GdkPixbuf *first_original;
+    GPtrArray *undo_stack;
     GdkPixbuf *preview;
     char      *path;
     int        img_w, img_h;
     GtkWidget *stack, *picture, *root;
+    GtkWidget *undo_btn;
 } AcState;
+
+static gpointer get_state(GtkWidget *v);
+static void ac_update(AcState *st);
+
+static void ac_update_undo_btn(AcState *st) {
+    if (st->undo_btn)
+        gtk_widget_set_sensitive(st->undo_btn, st->undo_stack && st->undo_stack->len > 0);
+}
+
+static void ac_push_undo(AcState *st) {
+    if (st->original) image_undo_push(st->undo_stack, st->original);
+    ac_update_undo_btn(st);
+}
+
+static void ac_undo(GtkButton *b, gpointer d) {
+    (void)b;
+    AcState *st = get_state(d);
+    GdkPixbuf *prev = image_undo_pop(st->undo_stack);
+    if (!prev) return;
+    g_clear_object(&st->original);
+    st->original = prev;
+    st->img_w = gdk_pixbuf_get_width(prev);
+    st->img_h = gdk_pixbuf_get_height(prev);
+    g_clear_object(&st->preview);
+    ac_update(st);
+    ac_update_undo_btn(st);
+}
+
+static void ac_reset(GtkButton *b, gpointer d) {
+    (void)b;
+    AcState *st = get_state(d);
+    if (!st->first_original) return;
+    ac_push_undo(st);
+    g_clear_object(&st->original);
+    st->original = g_object_ref(st->first_original);
+    st->img_w = gdk_pixbuf_get_width(st->original);
+    st->img_h = gdk_pixbuf_get_height(st->original);
+    g_clear_object(&st->preview);
+    ac_update(st);
+    ac_update_undo_btn(st);
+}
+
+static void ac_state_free(gpointer data) {
+    AcState *st = data;
+    if (!st) return;
+    g_clear_object(&st->original);
+    g_clear_object(&st->preview);
+    g_clear_object(&st->first_original);
+    if (st->undo_stack) image_undo_free(st->undo_stack);
+    g_free(st->path);
+    g_free(st);
+}
 
 static gpointer get_state(GtkWidget *v) {
     return g_object_get_data(G_OBJECT(v), "ac-state");
@@ -38,8 +93,13 @@ static void ac_load(AcState *st, const char *path) {
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
     g_clear_object(&st->original);
     g_clear_object(&st->preview);
+    g_clear_object(&st->first_original);
+    if (st->undo_stack) image_undo_clear(st->undo_stack);
+    ac_update_undo_btn(st);
     g_free(st->path);
+
     st->original = pb;
+    st->first_original = g_object_ref(pb);
     st->path = g_strdup(path);
     st->img_w = gdk_pixbuf_get_width(pb);
     st->img_h = gdk_pixbuf_get_height(pb);
@@ -116,8 +176,12 @@ static void straighten_apply(GtkButton *b, gpointer d) {
     }
 
     GdkPixbuf *new = rotate_arbitrary(st->base.original, angle);
+    ac_push_undo(&st->base);
+    g_clear_object(&st->base.original);
+    st->base.original = new;
+    st->base.img_w = gdk_pixbuf_get_width(new);
+    st->base.img_h = gdk_pixbuf_get_height(new);
     g_clear_object(&st->base.preview);
-    st->base.preview = new;
     ac_update(&st->base);
 }
 
@@ -145,6 +209,7 @@ static void straighten_on_drop(const char *p, gpointer d) {
 
 GtkWidget *image_straighten_create(void) {
     StraightenState *st = g_new0(StraightenState, 1);
+    st->base.undo_stack = image_undo_stack_new();
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->base.root = root;
@@ -184,7 +249,13 @@ GtkWidget *image_straighten_create(void) {
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
     gtk_box_append(GTK_BOX(bar), sp);
+
+    st->base.undo_btn = image_undo_button(G_CALLBACK(ac_undo), root);
+    GtkWidget *reset_btn = image_reset_button(G_CALLBACK(ac_reset), root);
     gtk_box_append(GTK_BOX(bar), image_new_image_button(straighten_on_drop, root));
+    gtk_box_append(GTK_BOX(bar), st->base.undo_btn);
+    gtk_box_append(GTK_BOX(bar), reset_btn);
+
 
     GtkWidget *apply = gtk_button_new_with_label("Apply");
     gtk_widget_add_css_class(apply, "suggested-action");
@@ -206,7 +277,7 @@ GtkWidget *image_straighten_create(void) {
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
     gtk_box_append(GTK_BOX(root), stack);
 
-    g_object_set_data_full(G_OBJECT(root), "ac-state", st, g_free);
+    g_object_set_data_full(G_OBJECT(root), "ac-state", st, ac_state_free);
     g_signal_connect(st->angle_scale, "value-changed",
                      G_CALLBACK(on_angle_changed), root);
     g_signal_connect(apply, "clicked", G_CALLBACK(straighten_apply), root);
@@ -315,8 +386,12 @@ static void autocrop_apply(GtkButton *b, gpointer d) {
         cw, ch);
     gdk_pixbuf_copy_area(src, left, top, cw, ch, cropped, 0, 0);
 
+    ac_push_undo(&st->base);
+    g_clear_object(&st->base.original);
+    st->base.original = cropped;
+    st->base.img_w = cw;
+    st->base.img_h = ch;
     g_clear_object(&st->base.preview);
-    st->base.preview = cropped;
     ac_update(&st->base);
 
     char *m = g_strdup_printf("Cropped to %d × %d", cw, ch);
@@ -348,6 +423,7 @@ static void autocrop_on_drop(const char *p, gpointer d) {
 
 GtkWidget *image_autocrop_create(void) {
     AutocropState *st = g_new0(AutocropState, 1);
+    st->base.undo_stack = image_undo_stack_new();
     st->tolerance = 20;
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -389,7 +465,13 @@ GtkWidget *image_autocrop_create(void) {
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
     gtk_box_append(GTK_BOX(bar), sp);
+
+    st->base.undo_btn = image_undo_button(G_CALLBACK(ac_undo), root);
+    GtkWidget *reset_btn = image_reset_button(G_CALLBACK(ac_reset), root);
     gtk_box_append(GTK_BOX(bar), image_new_image_button(autocrop_on_drop, root));
+    gtk_box_append(GTK_BOX(bar), st->base.undo_btn);
+    gtk_box_append(GTK_BOX(bar), reset_btn);
+
 
     GtkWidget *apply = gtk_button_new_with_label("Auto-crop");
     gtk_widget_add_css_class(apply, "suggested-action");
@@ -411,7 +493,7 @@ GtkWidget *image_autocrop_create(void) {
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
     gtk_box_append(GTK_BOX(root), stack);
 
-    g_object_set_data_full(G_OBJECT(root), "ac-state", st, g_free);
+    g_object_set_data_full(G_OBJECT(root), "ac-state", st, ac_state_free);
     g_signal_connect(st->tol_scale, "value-changed",
                      G_CALLBACK(on_tol_changed), root);
     g_signal_connect(apply, "clicked", G_CALLBACK(autocrop_apply), root);

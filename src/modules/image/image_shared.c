@@ -388,3 +388,59 @@ GtkWidget *image_new_image_button(ImageDropCallback on_file,
 
     return btn;
 }
+
+/* ------------------------------------------------------------------ */
+/* Undo stack                                                         */
+/* ------------------------------------------------------------------ */
+
+GPtrArray *image_undo_stack_new(void) {
+    return g_ptr_array_new_with_free_func(g_object_unref);
+}
+
+void image_undo_push(GPtrArray *stack, GdkPixbuf *pixbuf) {
+    if (!stack || !pixbuf) return;
+    g_ptr_array_add(stack, g_object_ref(pixbuf));
+}
+
+GdkPixbuf *image_undo_pop(GPtrArray *stack) {
+    if (!stack || stack->len == 0) return NULL;
+
+    /* Take the last item out without unreffing it */
+    GdkPixbuf *pb = g_ptr_array_index(stack, stack->len - 1);
+    g_ptr_array_remove_index(stack, stack->len - 1);
+    return pb;   /* caller owns this ref */
+}
+
+guint image_undo_depth(GPtrArray *stack) {
+    return stack ? stack->len : 0;
+}
+
+void image_undo_clear(GPtrArray *stack) {
+    if (stack) g_ptr_array_set_size(stack, 0);
+}
+
+void image_undo_free(GPtrArray *stack) {
+    if (stack) g_ptr_array_unref(stack);
+}
+
+/* ------------------------------------------------------------------ */
+/* Undo / Reset buttons                                               */
+/* ------------------------------------------------------------------ */
+
+GtkWidget *image_undo_button(GCallback on_undo, gpointer user_data) {
+    GtkWidget *btn = gtk_button_new_from_icon_name("edit-undo-symbolic");
+    gtk_widget_add_css_class(btn, "flat");
+    gtk_widget_set_tooltip_text(btn, "Undo (Ctrl+Z)");
+    if (on_undo)
+        g_signal_connect(btn, "clicked", on_undo, user_data);
+    return btn;
+}
+
+GtkWidget *image_reset_button(GCallback on_reset, gpointer user_data) {
+    GtkWidget *btn = gtk_button_new_from_icon_name("edit-clear-symbolic");
+    gtk_widget_add_css_class(btn, "flat");
+    gtk_widget_set_tooltip_text(btn, "Reset to original (Ctrl+R)");
+    if (on_reset)
+        g_signal_connect(btn, "clicked", on_reset, user_data);
+    return btn;
+}

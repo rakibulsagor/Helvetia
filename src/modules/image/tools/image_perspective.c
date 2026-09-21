@@ -5,12 +5,67 @@
 
 typedef struct {
     GdkPixbuf *original;
+    GdkPixbuf *first_original;
+    GPtrArray *undo_stack;
     GdkPixbuf *preview;
     char      *path;
     int        img_w, img_h;
     double     tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y;
     GtkWidget *stack, *picture, *root;
+    GtkWidget *undo_btn;
 } PerspState;
+
+static PerspState *get_state(GtkWidget *v);
+static void update_preview(PerspState *st);
+
+static void persp_update_undo_btn(PerspState *st) {
+    if (st->undo_btn)
+        gtk_widget_set_sensitive(st->undo_btn, st->undo_stack && st->undo_stack->len > 0);
+}
+
+static void persp_push_undo(PerspState *st) {
+    if (st->original) image_undo_push(st->undo_stack, st->original);
+    persp_update_undo_btn(st);
+}
+
+static void persp_undo(GtkButton *b, gpointer d) {
+    (void)b;
+    PerspState *st = get_state(d);
+    GdkPixbuf *prev = image_undo_pop(st->undo_stack);
+    if (!prev) return;
+    g_clear_object(&st->original);
+    st->original = prev;
+    st->img_w = gdk_pixbuf_get_width(prev);
+    st->img_h = gdk_pixbuf_get_height(prev);
+    g_clear_object(&st->preview);
+    update_preview(st);
+    persp_update_undo_btn(st);
+}
+
+static void persp_reset(GtkButton *b, gpointer d) {
+    (void)b;
+    PerspState *st = get_state(d);
+    if (!st->first_original) return;
+    persp_push_undo(st);
+    g_clear_object(&st->original);
+    st->original = g_object_ref(st->first_original);
+    st->img_w = gdk_pixbuf_get_width(st->original);
+    st->img_h = gdk_pixbuf_get_height(st->original);
+    g_clear_object(&st->preview);
+    update_preview(st);
+    persp_update_undo_btn(st);
+}
+
+static void persp_state_free(gpointer data) {
+    PerspState *st = data;
+    if (!st) return;
+    g_clear_object(&st->original);
+    g_clear_object(&st->preview);
+    g_clear_object(&st->first_original);
+    if (st->undo_stack) image_undo_free(st->undo_stack);
+    g_free(st->path);
+    g_free(st);
+}
 
 static PerspState *get_state(GtkWidget *v) {
     return g_object_get_data(G_OBJECT(v), "persp-state");
@@ -82,8 +137,14 @@ static void apply_persp(GtkButton *b, gpointer d) {
     (void)b;
     PerspState *st = get_state(d);
     if (!st->original) return;
+    
+    GdkPixbuf *new = apply_perspective(st);
+    persp_push_undo(st);
+    g_clear_object(&st->original);
+    st->original = new;
+    st->img_w = gdk_pixbuf_get_width(new);
+    st->img_h = gdk_pixbuf_get_height(new);
     g_clear_object(&st->preview);
-    st->preview = apply_perspective(st);
     update_preview(st);
 }
 
@@ -107,8 +168,13 @@ static void on_drop(const char *path, gpointer d) {
 
     g_clear_object(&st->original);
     g_clear_object(&st->preview);
+    g_clear_object(&st->first_original);
+    if (st->undo_stack) image_undo_clear(st->undo_stack);
+    persp_update_undo_btn(st);
     g_free(st->path);
+
     st->original = pb;
+    st->first_original = g_object_ref(pb);
     st->path = g_strdup(path);
     st->img_w = gdk_pixbuf_get_width(pb);
     st->img_h = gdk_pixbuf_get_height(pb);
@@ -149,6 +215,7 @@ static GtkWidget *make_slider(const char *label, double *val,
 
 GtkWidget *image_perspective_create(void) {
     PerspState *st = g_new0(PerspState, 1);
+    st->undo_stack = image_undo_stack_new();
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
@@ -194,10 +261,15 @@ GtkWidget *image_perspective_create(void) {
     gtk_box_append(GTK_BOX(opts), make_slider("BR Y", &st->br_y, 0, 1, root));
 
     GtkWidget *btn_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    st->undo_btn = image_undo_button(G_CALLBACK(persp_undo), root);
+    GtkWidget *reset_btn = image_reset_button(G_CALLBACK(persp_reset), root);
     GtkWidget *apply = gtk_button_new_with_label("Apply");
     gtk_widget_add_css_class(apply, "suggested-action");
     GtkWidget *save = gtk_button_new_with_label("Save As…");
     gtk_widget_add_css_class(save, "flat");
+    
+    gtk_box_append(GTK_BOX(btn_row), st->undo_btn);
+    gtk_box_append(GTK_BOX(btn_row), reset_btn);
     gtk_box_append(GTK_BOX(btn_row), apply);
     gtk_box_append(GTK_BOX(btn_row), save);
     gtk_box_append(GTK_BOX(opts), btn_row);
@@ -215,7 +287,7 @@ GtkWidget *image_perspective_create(void) {
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
     gtk_box_append(GTK_BOX(root), stack);
 
-    g_object_set_data_full(G_OBJECT(root), "persp-state", st, g_free);
+    g_object_set_data_full(G_OBJECT(root), "persp-state", st, persp_state_free);
     g_signal_connect(apply, "clicked", G_CALLBACK(apply_persp), root);
     g_signal_connect(save, "clicked", G_CALLBACK(save_persp), root);
 

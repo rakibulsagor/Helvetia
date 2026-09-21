@@ -69,4 +69,25 @@ GdkPixbuf *image_picture_get_pixbuf(GtkPicture *picture);
 GtkWidget *image_new_image_button(ImageDropCallback on_file,
                                    gpointer          user_data);
 
+/* ------------------------------------------------------------------ */
+/* Undo / Reset support                                               */
+/* ------------------------------------------------------------------ */
+
+/* A stack of GdkPixbuf* — previous states of the image, oldest first.
+   Every push adds a reference, every pop transfers a reference to the
+   caller, every clear drops all references. */
+GPtrArray *image_undo_stack_new(void);
+void       image_undo_push(GPtrArray *stack, GdkPixbuf *pixbuf);
+GdkPixbuf *image_undo_pop(GPtrArray *stack);
+guint      image_undo_depth(GPtrArray *stack);
+void       image_undo_clear(GPtrArray *stack);
+void       image_undo_free(GPtrArray *stack);
+
+/* Build an "Undo" button. It calls on_undo(user_data) when clicked.
+   Returns a GtkButton* with the edit-undo-symbolic icon. */
+GtkWidget *image_undo_button(GCallback on_undo, gpointer user_data);
+
+/* Build a "Reset" button. It calls on_reset(user_data) when clicked. */
+GtkWidget *image_reset_button(GCallback on_reset, gpointer user_data);
+
 G_END_DECLS

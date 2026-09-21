@@ -10,13 +10,68 @@
 
 typedef struct {
     GdkPixbuf *original;
+    GdkPixbuf *first_original;
+    GPtrArray *undo_stack;
     GdkPixbuf *preview;
     char      *path;
     int        img_w, img_h;
 
     GtkWidget *stack, *picture, *root;
     GtkWidget *apply_btn;
+    GtkWidget *undo_btn;
 } GeoState;
+
+static gpointer get_state(GtkWidget *v);
+static void geo_update_preview(GeoState *st);
+
+static void geo_update_undo_btn(GeoState *st) {
+    if (st->undo_btn)
+        gtk_widget_set_sensitive(st->undo_btn, st->undo_stack && st->undo_stack->len > 0);
+}
+
+static void geo_push_undo(GeoState *st) {
+    if (st->original) image_undo_push(st->undo_stack, st->original);
+    geo_update_undo_btn(st);
+}
+
+static void geo_undo(GtkButton *b, gpointer d) {
+    (void)b;
+    GeoState *st = get_state(d);
+    GdkPixbuf *prev = image_undo_pop(st->undo_stack);
+    if (!prev) return;
+    g_clear_object(&st->original);
+    st->original = prev;
+    st->img_w = gdk_pixbuf_get_width(prev);
+    st->img_h = gdk_pixbuf_get_height(prev);
+    g_clear_object(&st->preview);
+    geo_update_preview(st);
+    geo_update_undo_btn(st);
+}
+
+static void geo_reset(GtkButton *b, gpointer d) {
+    (void)b;
+    GeoState *st = get_state(d);
+    if (!st->first_original) return;
+    geo_push_undo(st);
+    g_clear_object(&st->original);
+    st->original = g_object_ref(st->first_original);
+    st->img_w = gdk_pixbuf_get_width(st->original);
+    st->img_h = gdk_pixbuf_get_height(st->original);
+    g_clear_object(&st->preview);
+    geo_update_preview(st);
+    geo_update_undo_btn(st);
+}
+
+static void geo_state_free(gpointer data) {
+    GeoState *st = data;
+    if (!st) return;
+    g_clear_object(&st->original);
+    g_clear_object(&st->preview);
+    g_clear_object(&st->first_original);
+    if (st->undo_stack) image_undo_free(st->undo_stack);
+    g_free(st->path);
+    g_free(st);
+}
 
 static gpointer get_state(GtkWidget *v) {
     return g_object_get_data(G_OBJECT(v), "geo-state");
@@ -40,9 +95,13 @@ static void geo_load(GeoState *st, const char *path) {
 
     g_clear_object(&st->original);
     g_clear_object(&st->preview);
+    g_clear_object(&st->first_original);
+    if (st->undo_stack) image_undo_clear(st->undo_stack);
+    geo_update_undo_btn(st);
     g_free(st->path);
 
     st->original = pb;
+    st->first_original = g_object_ref(pb);
     st->path = g_strdup(path);
     st->img_w = gdk_pixbuf_get_width(pb);
     st->img_h = gdk_pixbuf_get_height(pb);
@@ -145,10 +204,13 @@ static void resize_apply(GtkButton *b, gpointer d) {
 
     GdkPixbuf *new = gdk_pixbuf_scale_simple(st->base.original, w, h,
                                               GDK_INTERP_BILINEAR);
+    geo_push_undo(&st->base);
+    g_clear_object(&st->base.original);
+    st->base.original = new;
+    st->base.img_w = w;
+    st->base.img_h = h;
     g_clear_object(&st->base.preview);
-    st->base.preview = new;
     geo_update_preview(&st->base);
-    image_show_info(st->base.root, "Preview updated");
 }
 
 static void resize_save(GtkButton *b, gpointer d) {
@@ -189,6 +251,7 @@ static void resize_pct_clicked(GtkButton *b, gpointer d) {
 
 GtkWidget *image_resize_create(void) {
     ResizeState *st = g_new0(ResizeState, 1);
+    st->base.undo_stack = image_undo_stack_new();
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->base.root = root;
@@ -247,7 +310,13 @@ GtkWidget *image_resize_create(void) {
     st->ratio_switch = gtk_switch_new();
     gtk_switch_set_active(GTK_SWITCH(st->ratio_switch), TRUE);
     gtk_box_append(GTK_BOX(bar), st->ratio_switch);
+
+    st->base.undo_btn = image_undo_button(G_CALLBACK(geo_undo), root);
+    GtkWidget *reset_btn = image_reset_button(G_CALLBACK(geo_reset), root);
     gtk_box_append(GTK_BOX(bar), image_new_image_button(resize_on_drop, root));
+    gtk_box_append(GTK_BOX(bar), st->base.undo_btn);
+    gtk_box_append(GTK_BOX(bar), reset_btn);
+
 
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
@@ -274,7 +343,7 @@ GtkWidget *image_resize_create(void) {
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
     gtk_box_append(GTK_BOX(root), stack);
 
-    g_object_set_data_full(G_OBJECT(root), "geo-state", st, g_free);
+    g_object_set_data_full(G_OBJECT(root), "geo-state", st, geo_state_free);
     g_signal_connect(st->w_entry, "changed", G_CALLBACK(on_resize_w), root);
     g_signal_connect(st->h_entry, "changed", G_CALLBACK(on_resize_h), root);
     g_signal_connect(apply, "clicked", G_CALLBACK(resize_apply), root);
@@ -296,57 +365,26 @@ static RotateState *get_rot_state(GtkWidget *v) {
     return g_object_get_data(G_OBJECT(v), "geo-state");
 }
 
-/* Re-render the preview from the *original* with the current rotation */
-static void rotate_refresh(RotateState *st) {
+static void rotate_apply(RotateState *st, GdkPixbufRotation rot) {
     if (!st->base.original) return;
-
-    GdkPixbuf *new = NULL;
-    switch (st->total_rotation) {
-        case 90:
-            new = gdk_pixbuf_rotate_simple(st->base.original,
-                                            GDK_PIXBUF_ROTATE_CLOCKWISE);
-            break;
-        case 180:
-            new = gdk_pixbuf_rotate_simple(st->base.original,
-                                            GDK_PIXBUF_ROTATE_UPSIDEDOWN);
-            break;
-        case 270:
-            new = gdk_pixbuf_rotate_simple(st->base.original,
-                                            GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE);
-            break;
-        default:
-            new = g_object_ref(st->base.original);
-            break;
-    }
-
+    geo_push_undo(&st->base);
+    GdkPixbuf *new = gdk_pixbuf_rotate_simple(st->base.original, rot);
+    g_clear_object(&st->base.original);
+    st->base.original = new;
+    st->base.img_w = gdk_pixbuf_get_width(new);
+    st->base.img_h = gdk_pixbuf_get_height(new);
     g_clear_object(&st->base.preview);
-    st->base.preview = new;
     geo_update_preview(&st->base);
 }
 
-/* Immediate actions */
 static void do_rotate_cw(GtkButton *b, gpointer d) {
-    (void)b;
-    RotateState *st = get_rot_state(d);
-    if (!st->base.original) return;
-    st->total_rotation = (st->total_rotation + 90) % 360;
-    rotate_refresh(st);
+    rotate_apply(get_rot_state(d), GDK_PIXBUF_ROTATE_CLOCKWISE);
 }
-
 static void do_rotate_ccw(GtkButton *b, gpointer d) {
-    (void)b;
-    RotateState *st = get_rot_state(d);
-    if (!st->base.original) return;
-    st->total_rotation = (st->total_rotation + 270) % 360;
-    rotate_refresh(st);
+    rotate_apply(get_rot_state(d), GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE);
 }
-
 static void do_rotate_180(GtkButton *b, gpointer d) {
-    (void)b;
-    RotateState *st = get_rot_state(d);
-    if (!st->base.original) return;
-    st->total_rotation = (st->total_rotation + 180) % 360;
-    rotate_refresh(st);
+    rotate_apply(get_rot_state(d), GDK_PIXBUF_ROTATE_UPSIDEDOWN);
 }
 
 static void on_rot_save(GtkButton *b, gpointer d) {
@@ -366,6 +404,7 @@ static void rotate_on_drop(const char *p, gpointer d) {
 
 GtkWidget *image_rotate_create(void) {
     RotateState *st = g_new0(RotateState, 1);
+    st->base.undo_stack = image_undo_stack_new();
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->base.root = root;
@@ -403,7 +442,13 @@ GtkWidget *image_rotate_create(void) {
     gtk_box_append(GTK_BOX(bar), ccw);
     gtk_box_append(GTK_BOX(bar), cw);
     gtk_box_append(GTK_BOX(bar), r180);
+
+    st->base.undo_btn = image_undo_button(G_CALLBACK(geo_undo), root);
+    GtkWidget *reset_btn = image_reset_button(G_CALLBACK(geo_reset), root);
     gtk_box_append(GTK_BOX(bar), image_new_image_button(rotate_on_drop, root));
+    gtk_box_append(GTK_BOX(bar), st->base.undo_btn);
+    gtk_box_append(GTK_BOX(bar), reset_btn);
+
 
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
@@ -428,7 +473,7 @@ GtkWidget *image_rotate_create(void) {
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
     gtk_box_append(GTK_BOX(root), stack);
 
-    g_object_set_data_full(G_OBJECT(root), "geo-state", st, g_free);
+    g_object_set_data_full(G_OBJECT(root), "geo-state", st, geo_state_free);
 
     g_signal_connect(ccw,  "clicked", G_CALLBACK(do_rotate_ccw), root);
     g_signal_connect(cw,   "clicked", G_CALLBACK(do_rotate_cw),  root);
@@ -453,8 +498,12 @@ static void flip_apply(GtkButton *b, gpointer d) {
     if (!st->base.original) return;
 
     GdkPixbuf *new = gdk_pixbuf_flip(st->base.original, st->horizontal);
+    geo_push_undo(&st->base);
+    g_clear_object(&st->base.original);
+    st->base.original = new;
+    st->base.img_w = gdk_pixbuf_get_width(new);
+    st->base.img_h = gdk_pixbuf_get_height(new);
     g_clear_object(&st->base.preview);
-    st->base.preview = new;
     geo_update_preview(&st->base);
 }
 
@@ -480,6 +529,7 @@ static void flip_on_drop(const char *p, gpointer d) {
 
 GtkWidget *image_flip_create(void) {
     FlipState *st = g_new0(FlipState, 1);
+    st->base.undo_stack = image_undo_stack_new();
     st->horizontal = TRUE;
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -511,7 +561,13 @@ GtkWidget *image_flip_create(void) {
     const char *dirs[] = {"Horizontal", "Vertical", NULL};
     GtkWidget *dd = gtk_drop_down_new_from_strings(dirs);
     gtk_box_append(GTK_BOX(bar), dd);
+
+    st->base.undo_btn = image_undo_button(G_CALLBACK(geo_undo), root);
+    GtkWidget *reset_btn = image_reset_button(G_CALLBACK(geo_reset), root);
     gtk_box_append(GTK_BOX(bar), image_new_image_button(flip_on_drop, root));
+    gtk_box_append(GTK_BOX(bar), st->base.undo_btn);
+    gtk_box_append(GTK_BOX(bar), reset_btn);
+
 
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
@@ -537,7 +593,7 @@ GtkWidget *image_flip_create(void) {
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
     gtk_box_append(GTK_BOX(root), stack);
 
-    g_object_set_data_full(G_OBJECT(root), "geo-state", st, g_free);
+    g_object_set_data_full(G_OBJECT(root), "geo-state", st, geo_state_free);
     g_signal_connect(dd, "notify::selected", G_CALLBACK(on_flip_dir), root);
     g_signal_connect(apply, "clicked", G_CALLBACK(flip_apply), root);
     g_signal_connect(save, "clicked", G_CALLBACK(flip_save), root);
@@ -585,8 +641,12 @@ static void canvas_apply(GtkButton *b, gpointer d) {
     gdk_pixbuf_copy_area(st->base.original, sx, sy, cw, ch,
                          new, MAX(0, ox), MAX(0, oy));
 
+    geo_push_undo(&st->base);
+    g_clear_object(&st->base.original);
+    st->base.original = new;
+    st->base.img_w = w;
+    st->base.img_h = h;
     g_clear_object(&st->base.preview);
-    st->base.preview = new;
     geo_update_preview(&st->base);
 }
 
@@ -611,6 +671,7 @@ static void canvas_resize_on_drop(const char *p, gpointer d) {
 
 GtkWidget *image_canvas_resize_create(void) {
     CanvasState *st = g_new0(CanvasState, 1);
+    st->base.undo_stack = image_undo_stack_new();
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
     st->base.root = root;
@@ -645,7 +706,13 @@ GtkWidget *image_canvas_resize_create(void) {
     st->h_entry = gtk_entry_new();
     gtk_widget_set_size_request(st->h_entry, 80, -1);
     gtk_box_append(GTK_BOX(bar), st->h_entry);
+
+    st->base.undo_btn = image_undo_button(G_CALLBACK(geo_undo), root);
+    GtkWidget *reset_btn = image_reset_button(G_CALLBACK(geo_reset), root);
     gtk_box_append(GTK_BOX(bar), image_new_image_button(canvas_resize_on_drop, root));
+    gtk_box_append(GTK_BOX(bar), st->base.undo_btn);
+    gtk_box_append(GTK_BOX(bar), reset_btn);
+
 
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
@@ -671,7 +738,7 @@ GtkWidget *image_canvas_resize_create(void) {
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
     gtk_box_append(GTK_BOX(root), stack);
 
-    g_object_set_data_full(G_OBJECT(root), "geo-state", st, g_free);
+    g_object_set_data_full(G_OBJECT(root), "geo-state", st, geo_state_free);
     g_signal_connect(apply, "clicked", G_CALLBACK(canvas_apply), root);
     g_signal_connect(save, "clicked", G_CALLBACK(canvas_save), root);
 
