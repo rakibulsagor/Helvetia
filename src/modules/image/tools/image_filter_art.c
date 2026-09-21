@@ -1,7 +1,6 @@
 #include <gtk/gtk.h>
 #include <adwaita.h>
 #include <math.h>
-#include <string.h>
 #include <stdlib.h>
 #include "../image_shared.h"
 #include "image_filter_art.h"
@@ -180,6 +179,8 @@ static GtkWidget *build_editor_shell(FilterState *st, GtkWidget **out_sliders_bo
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), save);
 
+    g_object_set_data(G_OBJECT(reset), "save_prefix", (gpointer)save_prefix);
+
     GtkWidget *pic = gtk_picture_new();
     gtk_widget_set_vexpand(pic, TRUE);
     gtk_widget_set_halign(pic, GTK_ALIGN_CENTER);
@@ -197,9 +198,6 @@ static GtkWidget *build_editor_shell(FilterState *st, GtkWidget **out_sliders_bo
     return stack;
 }
 
-static inline double clamp01(double v) {
-    return v < 0 ? 0 : (v > 1 ? 1 : v);
-}
 
 /* ================================================================== */
 /* VIGNETTE                                                           */
@@ -286,7 +284,7 @@ void image_vignette_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "fil
 static void cmd_vig_reset(GtkWidget *v) { vig_on_reset(NULL, v); }
 const HelvetiaToolCommand image_vignette_commands[] = {
     { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_vig_reset },
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 GtkWidget *image_vignette_create(void) {
@@ -381,7 +379,7 @@ void image_film_grain_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "f
 static void cmd_fg_reset(GtkWidget *v) { fg_on_reset(NULL, v); }
 const HelvetiaToolCommand image_film_grain_commands[] = {
     { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_fg_reset },
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 GtkWidget *image_film_grain_create(void) {
@@ -546,7 +544,7 @@ void image_glow_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "filter-
 static void cmd_glow_reset(GtkWidget *v) { glow_on_reset(NULL, v); }
 const HelvetiaToolCommand image_glow_commands[] = {
     { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_glow_reset },
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 GtkWidget *image_glow_create(void) {

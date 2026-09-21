@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../core/tool_registry.h"
+#include "../../../core/plugin.h"
 
 GtkWidget *image_sepia_create(void);
 GtkWidget *image_grayscale_create(void);

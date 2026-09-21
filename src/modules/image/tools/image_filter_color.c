@@ -1,7 +1,7 @@
 #include <gtk/gtk.h>
 #include <adwaita.h>
 #include <math.h>
-#include <string.h>
+
 #include "../image_shared.h"
 #include "image_filter_color.h"
 
@@ -309,7 +309,7 @@ void image_sepia_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "filter
 static void cmd_sepia_reset(GtkWidget *v) { sepia_on_reset(NULL, v); }
 const HelvetiaToolCommand image_sepia_commands[] = {
     { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_sepia_reset },
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 GtkWidget *image_sepia_create(void) {
@@ -365,7 +365,7 @@ void image_grayscale_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "fi
 static void cmd_gray_reset(GtkWidget *v) { gray_on_reset(NULL, v); }
 const HelvetiaToolCommand image_grayscale_commands[] = {
     { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_gray_reset },
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 GtkWidget *image_grayscale_create(void) {
@@ -416,7 +416,7 @@ void image_invert_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "filte
 static void cmd_invert_reset(GtkWidget *v) { invert_on_reset(NULL, v); }
 const HelvetiaToolCommand image_invert_commands[] = {
     { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_invert_reset },
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 GtkWidget *image_invert_create(void) {
@@ -478,7 +478,7 @@ void image_threshold_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "fi
 static void cmd_thresh_reset(GtkWidget *v) { thresh_on_reset(NULL, v); }
 const HelvetiaToolCommand image_threshold_commands[] = {
     { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_thresh_reset },
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 GtkWidget *image_threshold_create(void) {
@@ -547,7 +547,7 @@ void image_posterize_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "fi
 static void cmd_post_reset(GtkWidget *v) { post_on_reset(NULL, v); }
 const HelvetiaToolCommand image_posterize_commands[] = {
     { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_post_reset },
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 GtkWidget *image_posterize_create(void) {

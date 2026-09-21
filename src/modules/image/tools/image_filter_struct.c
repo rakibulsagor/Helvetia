@@ -1,7 +1,7 @@
 #include <gtk/gtk.h>
 #include <adwaita.h>
 #include <math.h>
-#include <string.h>
+
 #include "../image_shared.h"
 #include "image_filter_struct.h"
 
@@ -147,8 +147,11 @@ static GtkWidget *build_editor_shell(FilterState *st, GtkWidget **out_sliders_bo
 
     gtk_box_append(GTK_BOX(bar), st->undo_btn); gtk_box_append(GTK_BOX(bar), reset);
     gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
-    gtk_box_append(GTK_BOX(bar), new_img); gtk_box_append(GTK_BOX(bar), sp);
+    gtk_box_append(GTK_BOX(bar), new_img);
+    gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), save);
+
+    g_object_set_data(G_OBJECT(reset), "save_prefix", (gpointer)save_prefix);
 
     GtkWidget *pic = gtk_picture_new();
     gtk_widget_set_vexpand(pic, TRUE); gtk_widget_set_halign(pic, GTK_ALIGN_CENTER);
@@ -226,7 +229,7 @@ static void emb_on_drop(const char *path, gpointer d) { on_drop_common(get_state
 static void emb_on_reset(GtkButton *b, gpointer d) { (void)b; FilterState *st = get_state(d); g_clear_object(&st->preview); update_preview(st); }
 void image_emboss_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "filter-state", NULL); }
 static void cmd_emb_reset(GtkWidget *v) { emb_on_reset(NULL, v); }
-const HelvetiaToolCommand image_emboss_commands[] = { { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_emb_reset }, { NULL } };
+const HelvetiaToolCommand image_emboss_commands[] = { { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_emb_reset }, { NULL, NULL, NULL, NULL, NULL, NULL } };
 
 GtkWidget *image_emboss_create(void) {
     FilterState *st = g_new0(FilterState, 1);
@@ -267,7 +270,7 @@ static void edge_on_drop(const char *path, gpointer d) { on_drop_common(get_stat
 static void edge_on_reset(GtkButton *b, gpointer d) { (void)b; FilterState *st = get_state(d); g_clear_object(&st->preview); update_preview(st); }
 void image_edge_detect_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "filter-state", NULL); }
 static void cmd_edge_reset(GtkWidget *v) { edge_on_reset(NULL, v); }
-const HelvetiaToolCommand image_edge_detect_commands[] = { { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_edge_reset }, { NULL } };
+const HelvetiaToolCommand image_edge_detect_commands[] = { { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_edge_reset }, { NULL, NULL, NULL, NULL, NULL, NULL } };
 
 GtkWidget *image_edge_detect_create(void) {
     FilterState *st = g_new0(FilterState, 1);
@@ -359,7 +362,7 @@ static void pix_on_drop(const char *path, gpointer d) { on_drop_common(get_state
 static void pix_on_reset(GtkButton *b, gpointer d) { (void)b; FilterState *st = get_state(d); g_clear_object(&st->preview); update_preview(st); }
 void image_pixelate_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "filter-state", NULL); }
 static void cmd_pix_reset(GtkWidget *v) { pix_on_reset(NULL, v); }
-const HelvetiaToolCommand image_pixelate_commands[] = { { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_pix_reset }, { NULL } };
+const HelvetiaToolCommand image_pixelate_commands[] = { { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_pix_reset }, { NULL, NULL, NULL, NULL, NULL, NULL } };
 
 GtkWidget *image_pixelate_create(void) {
     FilterState *st = g_new0(FilterState, 1);
@@ -405,7 +408,7 @@ static void mos_on_drop(const char *path, gpointer d) { on_drop_common(get_state
 static void mos_on_reset(GtkButton *b, gpointer d) { (void)b; FilterState *st = get_state(d); g_clear_object(&st->preview); update_preview(st); }
 void image_mosaic_on_close(GtkWidget *v) { g_object_set_data(G_OBJECT(v), "filter-state", NULL); }
 static void cmd_mos_reset(GtkWidget *v) { mos_on_reset(NULL, v); }
-const HelvetiaToolCommand image_mosaic_commands[] = { { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_mos_reset }, { NULL } };
+const HelvetiaToolCommand image_mosaic_commands[] = { { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic", .activate = cmd_mos_reset }, { NULL, NULL, NULL, NULL, NULL, NULL } };
 
 GtkWidget *image_mosaic_create(void) {
     FilterState *st = g_new0(FilterState, 1);

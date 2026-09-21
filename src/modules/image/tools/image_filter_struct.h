@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../core/tool_registry.h"
+#include "../../../core/plugin.h"
 
 GtkWidget *image_emboss_create(void);
 GtkWidget *image_edge_detect_create(void);
