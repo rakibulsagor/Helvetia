@@ -14,6 +14,7 @@
 #include "tools/image_exposure.h"
 #include "tools/image_color.h"
 #include "tools/image_tone.h"
+#include "tools/image_sharpen.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -53,6 +54,13 @@ static const HelvetiaTool category_adjustments[] = {
     { 0 }
 };
 
+static const HelvetiaTool category_filters[] = {
+    { .id = "image_blur", .name = "Blur", .description = "Soften the image with Gaussian, box, or motion blur", .icon_name = "blur-symbolic", .keywords = (const char*[]){ "blur", "soften", "gaussian", "motion", "box", NULL }, .create_view = image_blur_create, .commands = image_blur_commands, .on_close = image_blur_on_close },
+    { .id = "image_sharpen", .name = "Sharpen", .description = "Increase edge contrast", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "sharpen", "crisp", "edges", "contrast", NULL }, .create_view = image_sharpen_create, .commands = image_sharpen_commands, .on_close = image_sharpen_on_close },
+    { .id = "image_unsharp_mask", .name = "Unsharp Mask", .description = "Professional sharpening with radius and threshold", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "unsharp", "mask", "sharpening", "amount", "radius", "threshold", NULL }, .create_view = image_unsharp_mask_create, .commands = image_unsharp_mask_commands, .on_close = image_unsharp_mask_on_close },
+    { 0 }
+};
+
 static const HelvetiaSubcategory image_subcategories[] = {
     {
         .name = "Viewing & Inspection",
@@ -65,6 +73,10 @@ static const HelvetiaSubcategory image_subcategories[] = {
     {
         .name = "Adjustments",
         .tools = category_adjustments,
+    },
+    {
+        .name = "Filters",
+        .tools = category_filters,
     },
     { 0 }
 };
