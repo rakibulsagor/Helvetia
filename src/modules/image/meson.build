@@ -11,6 +11,7 @@ image_sources = files(
   'tools/image_autocrop.c',
   'tools/image_perspective.c',
   'tools/image_brightness_contrast.c',
+  'tools/image_levels.c',
 )
 
 helvetia_image_lib = static_library('helvetia_image',
