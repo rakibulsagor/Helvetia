@@ -12,6 +12,7 @@
 #include "tools/image_levels.h"
 #include "tools/image_curves.h"
 #include "tools/image_exposure.h"
+#include "tools/image_color.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -40,6 +41,10 @@ static const HelvetiaTool category_adjustments[] = {
     { .id = "image_levels", .name = "Levels", .description = "Adjust black point, white point, and gamma", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "levels", "histogram", "black", "white", "gamma", "tone", NULL }, .create_view = image_levels_create, .commands = image_levels_commands, .on_close = image_levels_on_close },
     { .id = "image_curves", .name = "Curves", .description = "Adjust tone curves with control points", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "curves", "tone", "gamma", "contrast", "rgb", "channel", "spline", NULL }, .create_view = image_curves_create, .commands = image_curves_commands, .on_close = image_curves_on_close },
     { .id = "image_exposure", .name = "Exposure", .description = "Adjust EV and black point", .icon_name = "display-brightness-symbolic", .keywords = (const char*[]){ "exposure", "ev", "stops", "black", "point", "brightness", NULL }, .create_view = image_exposure_create, .commands = image_exposure_commands, .on_close = image_exposure_on_close },
+    { .id = "image_saturation_vibrance", .name = "Saturation / Vibrance", .description = "Adjust color intensity", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "saturation", "vibrance", "color", "intensity", "vivid", NULL }, .create_view = image_saturation_vibrance_create, .commands = image_saturation_vibrance_commands, .on_close = image_saturation_vibrance_on_close },
+    { .id = "image_hue_shift", .name = "Hue Shift", .description = "Rotate all hues in the image", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "hue", "shift", "rotate", "color", "wheel", "hsl", NULL }, .create_view = image_hue_shift_create, .commands = image_hue_shift_commands, .on_close = image_hue_shift_on_close },
+    { .id = "image_white_balance", .name = "White Balance", .description = "Correct color temperature and tint", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "white", "balance", "temperature", "tint", "warm", "cool", NULL }, .create_view = image_white_balance_create, .commands = image_white_balance_commands, .on_close = image_white_balance_on_close },
+    { .id = "image_color_balance", .name = "Color Balance", .description = "Adjust RGB per tonal range", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "color", "balance", "shadows", "mids", "highlights", "rgb", NULL }, .create_view = image_color_balance_create, .commands = image_color_balance_commands, .on_close = image_color_balance_on_close },
     { 0 }
 };
 
