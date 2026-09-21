@@ -1,6 +1,5 @@
 #include <gtk/gtk.h>
 #include <adwaita.h>
-#include <math.h>
 #include "../image_shared.h"
 #include "image_perspective.h"
 

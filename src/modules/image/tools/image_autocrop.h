@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../core/tool_registry.h"
+#include <gtk/gtk.h>
 
 GtkWidget *image_straighten_create(void);
 void image_straighten_on_close(GtkWidget *view);
