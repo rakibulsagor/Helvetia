@@ -53,4 +53,12 @@ char *image_get_extension(const char *path);
 /* Format a size in bytes as a human-readable string. */
 char *image_format_size(guint64 bytes);
 
+/* Save dialog — saves a pixbuf to disk with a file chooser */
+void image_save_pixbuf_dialog(GtkWidget *parent,
+                               GdkPixbuf *pixbuf,
+                               const char *suggested_name);
+
+/* Compute the currently displayed pixbuf as a GdkPixbuf from a GTK picture */
+GdkPixbuf *image_picture_get_pixbuf(GtkPicture *picture);
+
 G_END_DECLS

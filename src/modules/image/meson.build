@@ -6,6 +6,10 @@ image_sources = files(
   'tools/image_thumbnail_grid.c',
   'tools/image_exif_viewer.c',
   'tools/image_metadata_inspector.c',
+  'tools/image_crop.c',
+  'tools/image_geometry.c',
+  'tools/image_autocrop.c',
+  'tools/image_perspective.c',
 )
 
 helvetia_image_lib = static_library('helvetia_image',
