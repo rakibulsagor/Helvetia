@@ -370,6 +370,8 @@ GtkWidget *image_exposure_create(void) {
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
     gtk_box_append(GTK_BOX(bar), sp);
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(on_drop, root));
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(bar), save);
 
     GtkWidget *pic = gtk_picture_new();

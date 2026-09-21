@@ -418,6 +418,8 @@ static GtkWidget *build_editor_shell(ColorState *st,
 
     GtkWidget *reset = image_reset_button(on_reset_cb, st->root);
 
+    GtkWidget *new_img = image_new_image_button(on_drop_cb, st->root);
+
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
 
@@ -427,6 +429,8 @@ static GtkWidget *build_editor_shell(ColorState *st,
 
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    gtk_box_append(GTK_BOX(bar), new_img);
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), save);
 

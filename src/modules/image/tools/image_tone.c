@@ -437,6 +437,8 @@ static GtkWidget *build_shell(ToneState *st, GtkWidget **out_sliders,
 
     GtkWidget *reset = image_reset_button(on_reset, root);
 
+    GtkWidget *new_img = image_new_image_button(on_drop, root);
+
     GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(sp, TRUE);
 
@@ -446,6 +448,8 @@ static GtkWidget *build_shell(ToneState *st, GtkWidget **out_sliders,
 
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    gtk_box_append(GTK_BOX(bar), new_img);
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), save);
 
@@ -991,6 +995,8 @@ GtkWidget *image_histogram_create(void) {
 
     gtk_box_append(GTK_BOX(bar), mode_lbl);
     gtk_box_append(GTK_BOX(bar), mode_dd);
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    gtk_box_append(GTK_BOX(bar), image_new_image_button(hist_on_drop, root));
     gtk_box_append(GTK_BOX(bar), sp);
 
     GtkWidget *draw = gtk_drawing_area_new();
