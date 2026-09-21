@@ -15,6 +15,7 @@ image_sources = files(
   'tools/image_curves.c',
   'tools/image_exposure.c',
   'tools/image_color.c',
+  'tools/image_tone.c',
 )
 
 helvetia_image_lib = static_library('helvetia_image',

@@ -13,6 +13,7 @@
 #include "tools/image_curves.h"
 #include "tools/image_exposure.h"
 #include "tools/image_color.h"
+#include "tools/image_tone.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -45,6 +46,10 @@ static const HelvetiaTool category_adjustments[] = {
     { .id = "image_hue_shift", .name = "Hue Shift", .description = "Rotate all hues in the image", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "hue", "shift", "rotate", "color", "wheel", "hsl", NULL }, .create_view = image_hue_shift_create, .commands = image_hue_shift_commands, .on_close = image_hue_shift_on_close },
     { .id = "image_white_balance", .name = "White Balance", .description = "Correct color temperature and tint", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "white", "balance", "temperature", "tint", "warm", "cool", NULL }, .create_view = image_white_balance_create, .commands = image_white_balance_commands, .on_close = image_white_balance_on_close },
     { .id = "image_color_balance", .name = "Color Balance", .description = "Adjust RGB per tonal range", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "color", "balance", "shadows", "mids", "highlights", "rgb", NULL }, .create_view = image_color_balance_create, .commands = image_color_balance_commands, .on_close = image_color_balance_on_close },
+    { .id = "image_shadows_highlights", .name = "Shadows / Highlights", .description = "Recover detail in shadows and highlights", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "shadows", "highlights", "recovery", "tone", "range", NULL }, .create_view = image_shadows_highlights_create, .commands = image_shadows_highlights_commands, .on_close = image_shadows_highlights_on_close },
+    { .id = "image_gamma", .name = "Gamma Correction", .description = "Adjust midtone brightness curve", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "gamma", "correction", "midtone", "curve", NULL }, .create_view = image_gamma_create, .commands = image_gamma_commands, .on_close = image_gamma_on_close },
+    { .id = "image_auto_enhance", .name = "Auto Enhance", .description = "One-click improvement", .icon_name = "starred-symbolic", .keywords = (const char*[]){ "auto", "enhance", "improve", "one", "click", "smart", NULL }, .create_view = image_auto_enhance_create, .commands = image_auto_enhance_commands, .on_close = image_auto_enhance_on_close },
+    { .id = "image_histogram", .name = "Histogram", .description = "View RGB and luminance distribution", .icon_name = "utilities-system-monitor-symbolic", .keywords = (const char*[]){ "histogram", "chart", "distribution", "rgb", "luma", "statistics", NULL }, .create_view = image_histogram_create, .commands = image_histogram_commands, .on_close = image_histogram_on_close },
     { 0 }
 };
 
