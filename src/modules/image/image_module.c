@@ -8,6 +8,7 @@
 #include "tools/image_geometry.h"
 #include "tools/image_autocrop.h"
 #include "tools/image_perspective.h"
+#include "tools/image_brightness_contrast.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -31,6 +32,11 @@ static const HelvetiaTool category_basic[] = {
     { 0 }
 };
 
+static const HelvetiaTool category_adjustments[] = {
+    { .id = "image_brightness_contrast", .name = "Brightness / Contrast", .description = "Adjust overall lightness and tonal range", .icon_name = "display-brightness-symbolic", .keywords = (const char*[]){ "brightness", "contrast", "lighten", "darken", "adjust", NULL }, .create_view = image_brightness_contrast_create, .commands = image_brightness_contrast_commands, .on_close = image_brightness_contrast_on_close },
+    { 0 }
+};
+
 static const HelvetiaSubcategory image_subcategories[] = {
     {
         .name = "Viewing & Inspection",
@@ -39,6 +45,10 @@ static const HelvetiaSubcategory image_subcategories[] = {
     {
         .name = "Basic Editing",
         .tools = category_basic,
+    },
+    {
+        .name = "Adjustments",
+        .tools = category_adjustments,
     },
     { 0 }
 };
