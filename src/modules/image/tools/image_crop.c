@@ -45,6 +45,7 @@ typedef struct {
     GtkWidget *root;
     GtkWidget *apply_btn;
     GtkWidget *undo_btn;
+    GtkWidget *reset_btn;
     GtkWidget *ratio_dd;
     GtkWidget *custom_w_entry;
     GtkWidget *custom_h_entry;
@@ -60,6 +61,7 @@ static void update_undo_sensitivity(CropState *st) {
                          (image_undo_depth(st->undo_stack) > 0 ||
                           st->original != st->first_original);
     gtk_widget_set_sensitive(st->undo_btn, can_undo);
+    if (st->reset_btn) gtk_widget_set_sensitive(st->reset_btn, can_reset);
 }
 
 static void reset_selection(CropState *st) {
@@ -580,7 +582,9 @@ GtkWidget *image_crop_create(void) {
     GtkWidget *undo = image_undo_button(G_CALLBACK(on_undo), root);
     GtkWidget *reset = image_reset_button(G_CALLBACK(on_reset), root);
     st->undo_btn = undo;
+    st->reset_btn = reset;
     gtk_widget_set_sensitive(undo, FALSE);
+    gtk_widget_set_sensitive(reset, FALSE);
 
     GtkWidget *clear = gtk_button_new_with_label("Clear");
     gtk_widget_add_css_class(clear, "flat");

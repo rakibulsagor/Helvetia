@@ -215,7 +215,7 @@
 
 .thumbnail-picture {
     border-radius: 6px;
-    background-color: shade(@window_bg_color, 0.9);
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 /* ------------------------------------------------------------------ */

@@ -378,12 +378,15 @@ static void rotate_apply(RotateState *st, GdkPixbufRotation rot) {
 }
 
 static void do_rotate_cw(GtkButton *b, gpointer d) {
+    (void)b;
     rotate_apply(get_rot_state(d), GDK_PIXBUF_ROTATE_CLOCKWISE);
 }
 static void do_rotate_ccw(GtkButton *b, gpointer d) {
+    (void)b;
     rotate_apply(get_rot_state(d), GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE);
 }
 static void do_rotate_180(GtkButton *b, gpointer d) {
+    (void)b;
     rotate_apply(get_rot_state(d), GDK_PIXBUF_ROTATE_UPSIDEDOWN);
 }
 
