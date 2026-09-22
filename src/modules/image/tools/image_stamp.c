@@ -14,8 +14,6 @@
 typedef enum {
     STAMP_EYEDROPPER,
     STAMP_DODGE_BURN,
-    STAMP_CLONE,
-    STAMP_HEALING,
     STAMP_SMUDGE,
     STAMP_OPACITY,
 } StampKind;
@@ -36,12 +34,6 @@ typedef struct {
     int        db_mode;       /* 0 = dodge, 1 = burn */
     double     db_strength;   /* 0..100 */
 
-    /* Clone / Healing */
-    gboolean   clone_alt_set;
-    double     src_x, src_y;  /* source anchor in image space */
-    double     anchor_offset_x, anchor_offset_y;   /* src - first_click */
-    gboolean   healing_blend; /* TRUE = blend with surroundings */
-
     /* Smudge */
     double     smudge_strength; /* 0..100 */
 
@@ -58,10 +50,13 @@ typedef struct {
     /* Displayed color for Eyedropper */
     double     picked_r, picked_g, picked_b;
 
+    /* View state */
+    double     zoom;
+
     /* Widgets */
     GtkWidget *stack, *picture, *draw_area, *overlay, *root;
     GtkWidget *undo_btn;
-    GtkWidget *color_swatch;      /* Eyedropper preview */
+    GtkWidget *color_area;        /* Eyedropper preview */
     GtkWidget *color_label;       /* hex display */
 } StampState;
 
@@ -89,8 +84,7 @@ static void on_undo(GtkButton *b, gpointer d) {
     g_ptr_array_remove_index(st->undo_stack, st->undo_stack->len - 1);
     g_clear_object(&st->current);
     st->current = prev;
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture),
-                              GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     gtk_widget_set_sensitive(st->undo_btn, st->undo_stack->len > 0);
 }
 
@@ -190,30 +184,35 @@ static void eyedropper_pick(StampState *st, double x, double y) {
                   &st->picked_r, &st->picked_g, &st->picked_b, &a);
 }
 
-static void update_color_swatch(StampState *st) {
-    if (!st->color_swatch) return;
-    GdkRGBA c = { st->picked_r, st->picked_g, st->picked_b, 1.0 };
-    char css[64];
-    snprintf(css, sizeof css, "background: rgb(%d,%d,%d);",
-             (int)(st->picked_r * 255),
-             (int)(st->picked_g * 255),
-             (int)(st->picked_b * 255));
-    GtkCssProvider *p = gtk_css_provider_new();
-    gtk_css_provider_load_from_string(p, css);
-    gtk_style_context_add_provider_for_display(
-        gtk_widget_get_display(st->color_swatch),
-        GTK_STYLE_PROVIDER(p),
-        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(p);
+static void on_color_area_draw(GtkDrawingArea *a, cairo_t *cr,
+                                 int w, int h, gpointer d) {
+    (void)a;
+    StampState *st = d;
+    cairo_set_source_rgba(cr, st->picked_r, st->picked_g, st->picked_b, 1.0);
+    cairo_paint(cr);
+    cairo_set_source_rgba(cr, 1, 1, 1, 0.3);
+    cairo_set_line_width(cr, 1);
+    cairo_rectangle(cr, 0.5, 0.5, w - 1, h - 1);
+    cairo_stroke(cr);
+}
 
-    char hex[16];
-    snprintf(hex, sizeof hex, "#%02X%02X%02X",
-             (int)(st->picked_r * 255),
-             (int)(st->picked_g * 255),
-             (int)(st->picked_b * 255));
-    if (st->color_label)
-        gtk_label_set_text(GTK_LABEL(st->color_label), hex);
-    (void)c;
+static void update_color_swatch(StampState *st) {
+    if (st->color_area)
+        gtk_widget_queue_draw(st->color_area);
+    if (st->color_label) {
+        char hex[16];
+        snprintf(hex, sizeof hex, "#%02X%02X%02X",
+                 (int)(st->picked_r * 255 + 0.5),
+                 (int)(st->picked_g * 255 + 0.5),
+                 (int)(st->picked_b * 255 + 0.5));
+        char full[64];
+        snprintf(full, sizeof full, "%s  RGB(%d,%d,%d)",
+                 hex,
+                 (int)(st->picked_r * 255 + 0.5),
+                 (int)(st->picked_g * 255 + 0.5),
+                 (int)(st->picked_b * 255 + 0.5));
+        gtk_label_set_text(GTK_LABEL(st->color_label), full);
+    }
 }
 
 /* ================================================================== */
@@ -267,143 +266,6 @@ static void dodge_burn_apply(StampState *st, double x, double y) {
     }
 }
 
-/* ================================================================== */
-/* CLONE STAMP                                                        */
-/* ================================================================== */
-
-static void clone_apply(StampState *st, double x, double y) {
-    if (!st->clone_alt_set) return;
-
-    double radius = st->size / 2.0;
-    if (radius < 1) radius = 1;
-
-    /* Source point is fixed relative to the first click */
-    double sx = x + st->anchor_offset_x;
-    double sy = y + st->anchor_offset_y;
-
-    int iw = gdk_pixbuf_get_width(st->current);
-    int ih = gdk_pixbuf_get_height(st->current);
-    int x0 = (int)floor(x - radius);
-    int x1 = (int)ceil(x + radius);
-    int y0 = (int)floor(y - radius);
-    int y1 = (int)ceil(y + radius);
-
-    double opacity = st->opacity;
-
-    for (int py = y0; py <= y1; py++) {
-        if (py < 0 || py >= ih) continue;
-        for (int px = x0; px <= x1; px++) {
-            if (px < 0 || px >= iw) continue;
-            double dx = px - x;
-            double dy = py - y;
-            double d = sqrt(dx*dx + dy*dy);
-            if (d > radius) continue;
-
-            /* Sample from source */
-            double srx = sx + dx;
-            double sry = sy + dy;
-            double sr, sg, sb, sa;
-            sample_pixel(st->current, srx, sry, &sr, &sg, &sb, &sa);
-
-            /* Target pixel */
-            double tr, tg, tb, ta;
-            sample_pixel(st->current, px, py, &tr, &tg, &tb, &ta);
-
-            /* Feather + opacity */
-            double feather = 1.0 - (d / radius);
-            feather = feather * feather;
-            double f = opacity * feather;
-
-            double out_r = tr + (sr - tr) * f;
-            double out_g = tg + (sg - tg) * f;
-            double out_b = tb + (sb - tb) * f;
-
-            write_pixel(st->current, px, py, out_r, out_g, out_b, ta);
-        }
-    }
-}
-
-/* ================================================================== */
-/* HEALING BRUSH                                                      */
-/* ================================================================== */
-
-static void healing_apply(StampState *st, double x, double y) {
-    if (!st->clone_alt_set) return;
-
-    double radius = st->size / 2.0;
-    if (radius < 1) radius = 1;
-
-    double sx = x + st->anchor_offset_x;
-    double sy = y + st->anchor_offset_y;
-
-    int iw = gdk_pixbuf_get_width(st->current);
-    int ih = gdk_pixbuf_get_height(st->current);
-    int x0 = (int)floor(x - radius);
-    int x1 = (int)ceil(x + radius);
-    int y0 = (int)floor(y - radius);
-    int y1 = (int)ceil(y + radius);
-
-    double opacity = st->opacity;
-
-    /* Compute mean color difference between source and target regions */
-    double src_sum_r = 0, src_sum_g = 0, src_sum_b = 0;
-    double tgt_sum_r = 0, tgt_sum_g = 0, tgt_sum_b = 0;
-    int cnt = 0;
-
-    for (int py = y0; py <= y1; py++) {
-        if (py < 0 || py >= ih) continue;
-        for (int px = x0; px <= x1; px++) {
-            if (px < 0 || px >= iw) continue;
-            double dx = px - x;
-            double dy = py - y;
-            if (dx*dx + dy*dy > radius*radius) continue;
-
-            double sr, sg, sb, sa, tr, tg, tb, ta;
-            sample_pixel(st->current, sx + dx, sy + dy, &sr, &sg, &sb, &sa);
-            sample_pixel(st->current, px, py, &tr, &tg, &tb, &ta);
-            src_sum_r += sr; src_sum_g += sg; src_sum_b += sb;
-            tgt_sum_r += tr; tgt_sum_g += tg; tgt_sum_b += tb;
-            cnt++;
-        }
-    }
-
-    if (cnt == 0) return;
-
-    double diff_r = (tgt_sum_r - src_sum_r) / cnt;
-    double diff_g = (tgt_sum_g - src_sum_g) / cnt;
-    double diff_b = (tgt_sum_b - src_sum_b) / cnt;
-
-    /* Apply source color + difference, weighted by opacity and feather */
-    for (int py = y0; py <= y1; py++) {
-        if (py < 0 || py >= ih) continue;
-        for (int px = x0; px <= x1; px++) {
-            if (px < 0 || px >= iw) continue;
-            double dx = px - x;
-            double dy = py - y;
-            double d = sqrt(dx*dx + dy*dy);
-            if (d > radius) continue;
-
-            double sr, sg, sb, sa, tr, tg, tb, ta;
-            sample_pixel(st->current, sx + dx, sy + dy, &sr, &sg, &sb, &sa);
-            sample_pixel(st->current, px, py, &tr, &tg, &tb, &ta);
-
-            /* Adjusted source = source + target_mean - source_mean */
-            double ar = sr + diff_r;
-            double ag = sg + diff_g;
-            double ab = sb + diff_b;
-
-            double feather = 1.0 - (d / radius);
-            feather = feather * feather;
-            double f = opacity * feather;
-
-            double out_r = tr + (ar - tr) * f;
-            double out_g = tg + (ag - tg) * f;
-            double out_b = tb + (ab - tb) * f;
-
-            write_pixel(st->current, px, py, out_r, out_g, out_b, ta);
-        }
-    }
-}
 
 /* ================================================================== */
 /* SMUDGE                                                             */
@@ -538,13 +400,7 @@ static void preview_draw(GtkDrawingArea *a, cairo_t *cr, int w, int h, gpointer 
         cairo_stroke(cr);
     }
 
-    if (st->clone_alt_set &&
-        (st->kind == STAMP_CLONE || st->kind == STAMP_HEALING)) {
-        cairo_set_line_width(cr, 1.5 / sx);
-        cairo_set_source_rgba(cr, 0.2, 0.9, 0.3, 0.9);
-        cairo_arc(cr, st->src_x, st->src_y, st->size / 2.0, 0, 2 * G_PI);
-        cairo_stroke(cr);
-    }
+
 
     cairo_restore(cr);
 }
@@ -560,15 +416,7 @@ static void on_press(GtkGestureClick *g, int n_press,
     double ix, iy;
     if (!screen_to_image(st, sx, sy, &ix, &iy)) return;
 
-    /* Alt-click on Clone/Healing sets source point */
-    if (st->alt_pressed &&
-        (st->kind == STAMP_CLONE || st->kind == STAMP_HEALING)) {
-        st->src_x = ix;
-        st->src_y = iy;
-        st->clone_alt_set = TRUE;
-        gtk_widget_queue_draw(st->draw_area);
-        return;
-    }
+
 
     switch (st->kind) {
         case STAMP_EYEDROPPER:
@@ -577,8 +425,6 @@ static void on_press(GtkGestureClick *g, int n_press,
             break;
 
         case STAMP_DODGE_BURN:
-        case STAMP_CLONE:
-        case STAMP_HEALING:
         case STAMP_SMUDGE:
             push_undo(st);
             st->dragging = TRUE;
@@ -588,25 +434,14 @@ static void on_press(GtkGestureClick *g, int n_press,
             st->first_y = iy;
             st->first_move = TRUE;
 
-            /* First stroke sets the clone anchor offset */
-            if ((st->kind == STAMP_CLONE || st->kind == STAMP_HEALING) &&
-                st->clone_alt_set) {
-                st->anchor_offset_x = st->src_x - ix;
-                st->anchor_offset_y = st->src_y - iy;
-            }
-
             if (st->kind == STAMP_DODGE_BURN)
                 dodge_burn_apply(st, ix, iy);
-            else if (st->kind == STAMP_CLONE)
-                clone_apply(st, ix, iy);
-            else if (st->kind == STAMP_HEALING)
-                healing_apply(st, ix, iy);
             else if (st->kind == STAMP_SMUDGE)
                 smudge_apply(st, ix, iy);
 
-            gtk_picture_set_paintable(GTK_PICTURE(st->picture),
-                                      GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
+            gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
             gtk_widget_queue_draw(st->draw_area);
+    st->zoom = 1.0;
             break;
 
         case STAMP_OPACITY:
@@ -625,8 +460,6 @@ static void on_motion(GtkEventControllerMotion *c, double sx, double sy,
 
     switch (st->kind) {
         case STAMP_DODGE_BURN: dodge_burn_apply(st, ix, iy); break;
-        case STAMP_CLONE:      clone_apply(st, ix, iy);      break;
-        case STAMP_HEALING:    healing_apply(st, ix, iy);    break;
         case STAMP_SMUDGE:
             smudge_apply(st, ix, iy);
             break;
@@ -635,9 +468,9 @@ static void on_motion(GtkEventControllerMotion *c, double sx, double sy,
 
     st->last_x = ix;
     st->last_y = iy;
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture),
-                              GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     gtk_widget_queue_draw(st->draw_area);
+    st->zoom = 1.0;
 }
 
 static void on_release(GtkGestureClick *g, int n_press,
@@ -647,21 +480,7 @@ static void on_release(GtkGestureClick *g, int n_press,
     st->dragging = FALSE;
 }
 
-static gboolean on_key(GtkEventControllerKey *c, guint key, guint code,
-                        GdkModifierType mods, gpointer d) {
-    (void)c; (void)code;
-    StampState *st = get_state(d);
-    if (key == GDK_KEY_Alt_L || key == GDK_KEY_Alt_R) {
-        st->alt_pressed = (mods & GDK_ALT_MASK) != 0;
-    }
-    if ((mods & GDK_ALT_MASK) &&
-        (st->kind == STAMP_CLONE || st->kind == STAMP_HEALING)) {
-        st->alt_pressed = TRUE;
-    } else {
-        st->alt_pressed = FALSE;
-    }
-    return FALSE;
-}
+
 
 /* ================================================================== */
 /* SHELL                                                              */
@@ -717,6 +536,7 @@ static void on_save_common(StampState *st, const char *prefix) {
 }
 
 static void on_drop_common(StampState *st, const char *path) {
+    st->zoom = 1.0;
     GError *e = NULL;
     GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
@@ -730,10 +550,8 @@ static void on_drop_common(StampState *st, const char *path) {
     st->current = pb;
     st->first_original = gdk_pixbuf_copy(pb);
     st->path = g_strdup(path);
-    st->clone_alt_set = FALSE;
 
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture),
-                              GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     gtk_stack_set_visible_child_name(GTK_STACK(st->stack), "editor");
 }
 
@@ -744,8 +562,7 @@ static void on_reset_common(GtkButton *b, gpointer d) {
     push_undo(st);
     g_clear_object(&st->current);
     st->current = g_object_ref(st->first_original);
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture),
-                              GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
 }
 
 static void stamp_state_free(StampState *st) {
@@ -810,6 +627,21 @@ static GtkWidget *build_shell(StampState *st, GtkWidget **out_opts,
     gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
+
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
+
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), save);
 
@@ -843,9 +675,7 @@ static GtkWidget *build_shell(StampState *st, GtkWidget **out_opts,
     g_signal_connect(motion, "motion", G_CALLBACK(on_motion), root);
     gtk_widget_add_controller(draw, motion);
 
-    GtkEventController *key = gtk_event_controller_key_new();
-    g_signal_connect(key, "key-pressed", G_CALLBACK(on_key), root);
-    gtk_widget_add_controller(root, key);
+
 
     gtk_box_append(GTK_BOX(editor), opts);
     gtk_box_append(GTK_BOX(editor), bar);
@@ -883,6 +713,7 @@ const HelvetiaToolCommand image_eyedropper_commands[] = {
 GtkWidget *image_eyedropper_create(void) {
     StampState *st = g_new0(StampState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->kind = STAMP_EYEDROPPER;
     st->size = 1;
 
@@ -902,17 +733,19 @@ GtkWidget *image_eyedropper_create(void) {
     gtk_widget_set_size_request(sl, 110, -1);
     gtk_label_set_xalign(GTK_LABEL(sl), 0.0f);
 
-    st->color_swatch = gtk_drawing_area_new();
-    gtk_widget_set_size_request(st->color_swatch, 40, 24);
-    gtk_widget_add_css_class(st->color_swatch, "color-swatch");
+    st->color_area = gtk_drawing_area_new();
+    gtk_widget_set_size_request(st->color_area, 48, 28);
+    gtk_widget_add_css_class(st->color_area, "color-swatch");
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(st->color_area),
+                                     on_color_area_draw, st, NULL);
 
-    st->color_label = gtk_label_new("—");
+    st->color_label = gtk_label_new("#000000");
     gtk_widget_set_hexpand(st->color_label, TRUE);
     gtk_label_set_xalign(GTK_LABEL(st->color_label), 0.0f);
     gtk_widget_add_css_class(st->color_label, "monospace");
 
     gtk_box_append(GTK_BOX(swatch_row), sl);
-    gtk_box_append(GTK_BOX(swatch_row), st->color_swatch);
+    gtk_box_append(GTK_BOX(swatch_row), st->color_area);
     gtk_box_append(GTK_BOX(swatch_row), st->color_label);
     gtk_box_append(GTK_BOX(opts), swatch_row);
 
@@ -928,6 +761,8 @@ GtkWidget *image_eyedropper_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "stamp-state", st,
                            (GDestroyNotify)stamp_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
@@ -962,6 +797,7 @@ const HelvetiaToolCommand image_dodge_burn_commands[] = {
 GtkWidget *image_dodge_burn_create(void) {
     StampState *st = g_new0(StampState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->kind = STAMP_DODGE_BURN;
     st->size = 40;
     st->opacity = 0.5;
@@ -1015,125 +851,12 @@ GtkWidget *image_dodge_burn_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "stamp-state", st,
                            (GDestroyNotify)stamp_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
-/* ================================================================== */
-/* TOOL 52 — CLONE STAMP                                              */
-/* ================================================================== */
 
-static void cl_save(GtkButton *b, gpointer d) { (void)b; on_save_common(get_state(d), "clone"); }
-static void cl_drop(const char *p, gpointer d) { on_drop_common(get_state(d), p); }
-static void cl_reset(GtkButton *b, gpointer d) { on_reset_common(b, d); }
-
-void image_clone_stamp_on_close(GtkWidget *v) {
-    g_object_set_data(G_OBJECT(v), "stamp-state", NULL);
-}
-static void cmd_cl_reset(GtkWidget *v) { on_reset_common(NULL, v); }
-
-const HelvetiaToolCommand image_clone_stamp_commands[] = {
-    { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic",
-      .accel = NULL, .tooltip = "Reset", .activate = cmd_cl_reset },
-    { NULL, NULL, NULL, NULL, NULL, NULL },
-};
-
-GtkWidget *image_clone_stamp_create(void) {
-    StampState *st = g_new0(StampState, 1);
-    st->undo_stack = g_ptr_array_new();
-    st->kind = STAMP_CLONE;
-    st->size = 40;
-    st->opacity = 1.0;
-
-    GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_vexpand(root, TRUE);
-    st->root = root;
-
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    cl_drop, G_CALLBACK(cl_save),
-                                    G_CALLBACK(cl_reset), root);
-
-    GtkWidget *l1, *l2;
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Size", 5, 200, 1, 40, &l1, G_CALLBACK(on_size), root));
-    gtk_label_set_text(GTK_LABEL(l1), "40");
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Opacity %", 1, 100, 1, 100, &l2, G_CALLBACK(on_opacity), root));
-    gtk_label_set_text(GTK_LABEL(l2), "100");
-
-    GtkWidget *hint = gtk_label_new(
-        "Hold Alt and click to set the source point (green circle). "
-        "Then click and drag anywhere to clone from that source.");
-    gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
-    gtk_widget_add_css_class(hint, "dim-label");
-    gtk_widget_add_css_class(hint, "caption");
-    gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
-
-    gtk_box_append(GTK_BOX(root), stack);
-    g_object_set_data_full(G_OBJECT(root), "stamp-state", st,
-                           (GDestroyNotify)stamp_state_free);
-    return root;
-}
-
-/* ================================================================== */
-/* TOOL 53 — HEALING BRUSH                                            */
-/* ================================================================== */
-
-static void hb_save(GtkButton *b, gpointer d) { (void)b; on_save_common(get_state(d), "healed"); }
-static void hb_drop(const char *p, gpointer d) { on_drop_common(get_state(d), p); }
-static void hb_reset(GtkButton *b, gpointer d) { on_reset_common(b, d); }
-
-void image_healing_brush_on_close(GtkWidget *v) {
-    g_object_set_data(G_OBJECT(v), "stamp-state", NULL);
-}
-static void cmd_hb_reset(GtkWidget *v) { on_reset_common(NULL, v); }
-
-const HelvetiaToolCommand image_healing_brush_commands[] = {
-    { .id = "reset", .name = "Reset", .icon_name = "view-refresh-symbolic",
-      .accel = NULL, .tooltip = "Reset", .activate = cmd_hb_reset },
-    { NULL, NULL, NULL, NULL, NULL, NULL },
-};
-
-GtkWidget *image_healing_brush_create(void) {
-    StampState *st = g_new0(StampState, 1);
-    st->undo_stack = g_ptr_array_new();
-    st->kind = STAMP_HEALING;
-    st->size = 40;
-    st->opacity = 1.0;
-
-    GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_vexpand(root, TRUE);
-    st->root = root;
-
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    hb_drop, G_CALLBACK(hb_save),
-                                    G_CALLBACK(hb_reset), root);
-
-    GtkWidget *l1, *l2;
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Size", 5, 200, 1, 40, &l1, G_CALLBACK(on_size), root));
-    gtk_label_set_text(GTK_LABEL(l1), "40");
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Opacity %", 1, 100, 1, 100, &l2, G_CALLBACK(on_opacity), root));
-    gtk_label_set_text(GTK_LABEL(l2), "100");
-
-    GtkWidget *hint = gtk_label_new(
-        "Hold Alt and click on a clean area to set the source. "
-        "Then paint over blemishes — the healing brush matches lighting "
-        "to blend seamlessly.");
-    gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
-    gtk_widget_add_css_class(hint, "dim-label");
-    gtk_widget_add_css_class(hint, "caption");
-    gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
-
-    gtk_box_append(GTK_BOX(root), stack);
-    g_object_set_data_full(G_OBJECT(root), "stamp-state", st,
-                           (GDestroyNotify)stamp_state_free);
-    return root;
-}
 
 /* ================================================================== */
 /* TOOL 54 — SMUDGE                                                   */
@@ -1161,6 +884,7 @@ const HelvetiaToolCommand image_smudge_commands[] = {
 GtkWidget *image_smudge_create(void) {
     StampState *st = g_new0(StampState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->kind = STAMP_SMUDGE;
     st->size = 30;
     st->opacity = 1.0;
@@ -1198,6 +922,8 @@ GtkWidget *image_smudge_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "stamp-state", st,
                            (GDestroyNotify)stamp_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
@@ -1227,8 +953,7 @@ static void op_on_mix(GtkRange *r, gpointer d) {
     if (mixed) {
         g_clear_object(&st->current);
         st->current = mixed;
-        gtk_picture_set_paintable(GTK_PICTURE(st->picture),
-                                  GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
+        gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     }
 }
 
@@ -1246,6 +971,7 @@ const HelvetiaToolCommand image_opacity_commands[] = {
 GtkWidget *image_opacity_create(void) {
     StampState *st = g_new0(StampState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->kind = STAMP_OPACITY;
     st->opacity_mix = 100;
 
@@ -1276,5 +1002,7 @@ GtkWidget *image_opacity_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "stamp-state", st,
                            (GDestroyNotify)stamp_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }

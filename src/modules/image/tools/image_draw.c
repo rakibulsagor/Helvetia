@@ -64,6 +64,7 @@ typedef struct {
     double     cur_x, cur_y;
 
     /* Widgets */
+    double     zoom;
     GtkWidget *stack, *picture, *draw_area, *overlay, *root;
     GtkWidget *undo_btn;
 } DrawState;
@@ -94,9 +95,10 @@ static void on_undo(GtkButton *b, gpointer d) {
 
     g_clear_object(&st->current);
     st->current = prev;   /* ownership transferred */
-    gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     gtk_widget_set_sensitive(st->undo_btn, st->undo_stack->len > 0);
     gtk_widget_queue_draw(st->draw_area);
+    st->zoom = 1.0;
 }
 
 static void clear_undo(DrawState *st) {
@@ -395,6 +397,7 @@ static void place_text(DrawState *st, double x, double y) {
     st->text_y = y;
     st->text_placed = TRUE;
     gtk_widget_queue_draw(st->draw_area);
+    st->zoom = 1.0;
 }
 
 static void commit_current_text(DrawState *st) {
@@ -423,8 +426,9 @@ static void commit_current_text(DrawState *st) {
     cairo_surface_destroy(surf);
 
     st->text_placed = FALSE;
-    gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     gtk_widget_queue_draw(st->draw_area);
+    st->zoom = 1.0;
 }
 
 /* ================================================================== */
@@ -567,13 +571,13 @@ static void on_press(GtkGestureClick *g, int n_press,
             st->last_x = ix;
             st->last_y = iy;
             brush_start(st, ix, iy);
-            gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+            gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
             break;
 
         case TOOL_FILL:
             push_undo(st);
             flood_fill(st, (int)ix, (int)iy);
-            gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+            gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
             break;
 
         case TOOL_GRADIENT:
@@ -609,17 +613,19 @@ static void on_motion(GtkEventControllerMotion *c, double sx, double sy,
         brush_dot(st, ix, iy);
         st->last_x = ix;
         st->last_y = iy;
-        gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+        gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     } else if (st->tool == TOOL_GRADIENT ||
                st->tool == TOOL_SHAPE ||
                st->tool == TOOL_ARROW) {
         st->cur_x = ix;
         st->cur_y = iy;
         gtk_widget_queue_draw(st->draw_area);
+    st->zoom = 1.0;
     } else if (st->tool == TOOL_TEXT && st->text_dragging) {
         st->text_x = ix - st->text_drag_ox;
         st->text_y = iy - st->text_drag_oy;
         gtk_widget_queue_draw(st->draw_area);
+    st->zoom = 1.0;
         return;
     }
 }
@@ -641,8 +647,9 @@ static void on_release(GtkGestureClick *g, int n_press,
     if (st->tool == TOOL_TEXT) {
         st->text_dragging = FALSE;
     }
-    gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     gtk_widget_queue_draw(st->draw_area);
+    st->zoom = 1.0;
 }
 
 /* ================================================================== */
@@ -735,6 +742,7 @@ static void on_save_common(DrawState *st, const char *prefix) {
 }
 
 static void on_drop_common(DrawState *st, const char *path) {
+    st->zoom = 1.0;
     GError *e = NULL;
     GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
@@ -749,7 +757,7 @@ static void on_drop_common(DrawState *st, const char *path) {
     st->first_original = gdk_pixbuf_copy(pb);
     st->path = g_strdup(path);
 
-    gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
     gtk_stack_set_visible_child_name(GTK_STACK(st->stack), "editor");
 }
 
@@ -760,7 +768,7 @@ static void on_reset_common(GtkButton *b, gpointer d) {
     push_undo(st);
     g_clear_object(&st->current);
     st->current = g_object_ref(st->first_original);
-    gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
 }
 
 static void draw_state_free(DrawState *st) {
@@ -827,6 +835,21 @@ static GtkWidget *build_shell(DrawState *st, GtkWidget **out_opts,
     gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
+
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
+
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), save);
 
@@ -908,6 +931,7 @@ const HelvetiaToolCommand image_brush_commands[] = {
 GtkWidget *image_brush_create(void) {
     DrawState *st = g_new0(DrawState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->tool = TOOL_BRUSH;
     st->color_r = 0.0; st->color_g = 0.0; st->color_b = 0.0;
     st->opacity = 1.0;
@@ -942,6 +966,8 @@ GtkWidget *image_brush_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
                            (GDestroyNotify)draw_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
@@ -973,6 +999,7 @@ const HelvetiaToolCommand image_eraser_commands[] = {
 GtkWidget *image_eraser_create(void) {
     DrawState *st = g_new0(DrawState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->tool = TOOL_ERASER;
     st->size = 20;
     st->eraser_mode = 0;
@@ -1018,6 +1045,8 @@ GtkWidget *image_eraser_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
                            (GDestroyNotify)draw_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
@@ -1048,6 +1077,7 @@ const HelvetiaToolCommand image_fill_commands[] = {
 GtkWidget *image_fill_create(void) {
     DrawState *st = g_new0(DrawState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->tool = TOOL_FILL;
     st->color_r = 0.2; st->color_g = 0.5; st->color_b = 0.9;
     st->opacity = 1.0;
@@ -1084,6 +1114,8 @@ GtkWidget *image_fill_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
                            (GDestroyNotify)draw_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
@@ -1115,6 +1147,7 @@ const HelvetiaToolCommand image_gradient_commands[] = {
 GtkWidget *image_gradient_create(void) {
     DrawState *st = g_new0(DrawState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->tool = TOOL_GRADIENT;
     st->color_r = 0.0; st->color_g = 0.0; st->color_b = 0.0;
     st->grad_r2 = 1.0; st->grad_g2 = 1.0; st->grad_b2 = 1.0;
@@ -1167,6 +1200,8 @@ GtkWidget *image_gradient_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
                            (GDestroyNotify)draw_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
@@ -1207,6 +1242,7 @@ const HelvetiaToolCommand image_text_commands[] = {
 GtkWidget *image_text_create(void) {
     DrawState *st = g_new0(DrawState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->tool = TOOL_TEXT;
     st->color_r = 0.0; st->color_g = 0.0; st->color_b = 0.0;
     st->opacity = 1.0;
@@ -1279,6 +1315,8 @@ GtkWidget *image_text_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
                            (GDestroyNotify)draw_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
@@ -1315,6 +1353,7 @@ const HelvetiaToolCommand image_shape_commands[] = {
 GtkWidget *image_shape_create(void) {
     DrawState *st = g_new0(DrawState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->tool = TOOL_SHAPE;
     st->color_r = 0.9; st->color_g = 0.1; st->color_b = 0.1;
     st->opacity = 1.0;
@@ -1383,6 +1422,8 @@ GtkWidget *image_shape_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
                            (GDestroyNotify)draw_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }
 
@@ -1408,6 +1449,7 @@ const HelvetiaToolCommand image_arrow_commands[] = {
 GtkWidget *image_arrow_create(void) {
     DrawState *st = g_new0(DrawState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->tool = TOOL_ARROW;
     st->color_r = 0.9; st->color_g = 0.1; st->color_b = 0.1;
     st->opacity = 1.0;
@@ -1445,5 +1487,7 @@ GtkWidget *image_arrow_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
                            (GDestroyNotify)draw_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
     return root;
 }

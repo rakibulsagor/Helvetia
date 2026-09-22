@@ -29,6 +29,7 @@ typedef struct {
     GdkPixbuf *first_original;  /* image as loaded from disk — for Reset */
     GPtrArray *undo_stack;      /* history of previous originals */
     char      *path;
+    double     zoom;
 
     int        img_w, img_h;
 
@@ -601,6 +602,16 @@ GtkWidget *image_crop_create(void) {
     GtkWidget *save = gtk_button_new_with_label("Save As…");
     gtk_widget_add_css_class(save, "flat");
 
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), st->root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), st->root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), st->root);
+
     gtk_box_append(GTK_BOX(toolbar), hint);
     gtk_box_append(GTK_BOX(toolbar), ratio_lbl);
     gtk_box_append(GTK_BOX(toolbar), st->ratio_dd);
@@ -609,13 +620,14 @@ GtkWidget *image_crop_create(void) {
     gtk_box_append(GTK_BOX(toolbar), undo);
     gtk_box_append(GTK_BOX(toolbar), reset);
     gtk_box_append(GTK_BOX(toolbar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    gtk_box_append(GTK_BOX(toolbar), z_out);
+    gtk_box_append(GTK_BOX(toolbar), z_1);
+    gtk_box_append(GTK_BOX(toolbar), z_in);
+    gtk_box_append(GTK_BOX(toolbar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(toolbar), image_new_image_button(on_drop, root));
     gtk_box_append(GTK_BOX(toolbar), clear);
     gtk_box_append(GTK_BOX(toolbar), apply);
     gtk_box_append(GTK_BOX(toolbar), save);
-
-    GtkWidget *picture = gtk_picture_new();
-    st->picture = picture;
 
     GtkWidget *draw = gtk_drawing_area_new();
     gtk_widget_set_hexpand(draw, TRUE);
@@ -623,8 +635,19 @@ GtkWidget *image_crop_create(void) {
     st->draw_area = draw;
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(draw), on_draw, st, NULL);
 
+    GtkWidget *pic = gtk_picture_new();
+    gtk_picture_set_can_shrink(GTK_PICTURE(pic), FALSE);
+    gtk_picture_set_content_fit(GTK_PICTURE(pic), GTK_CONTENT_FIT_CONTAIN);
+    gtk_widget_add_css_class(pic, "image-viewer-canvas");
+    st->picture = pic;
+
+    GtkWidget *scroller = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), pic);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+
     GtkWidget *overlay = gtk_overlay_new();
-    gtk_overlay_set_child(GTK_OVERLAY(overlay), picture);
+    gtk_overlay_set_child(GTK_OVERLAY(overlay), scroller);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay), draw);
     gtk_widget_set_vexpand(overlay, TRUE);
     st->overlay = overlay;
@@ -645,6 +668,8 @@ GtkWidget *image_crop_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
 
     g_object_set_data_full(G_OBJECT(root), "crop-state", st, (GDestroyNotify)crop_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     g_signal_connect(clear, "clicked", G_CALLBACK(on_clear), root);
     g_signal_connect(apply, "clicked", G_CALLBACK(on_apply), root);

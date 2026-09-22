@@ -17,6 +17,7 @@ typedef struct {
     double     contrast;    /* -100..+100 */
 
     GtkWidget *stack;
+    double zoom;
     GtkWidget *picture;
     GtkWidget *root;
     GtkWidget *brightness_scale;
@@ -42,12 +43,11 @@ static BCState *get_state(GtkWidget *v) {
 static void update_preview(BCState *st) {
     GdkPixbuf *src = st->preview ? st->preview : st->original;
     if (!src) return;
-    GdkTexture *t = gdk_texture_new_for_pixbuf(src);
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(t));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(src)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->picture),
                                  GTK_CONTENT_FIT_CONTAIN);
     gtk_picture_set_can_shrink(GTK_PICTURE(st->picture), TRUE);
-    g_object_unref(t);
+    
 }
 
 /* ------------------------------------------------------------------ */
@@ -334,6 +334,7 @@ const HelvetiaToolCommand image_brightness_contrast_commands[] = {
 GtkWidget *image_brightness_contrast_create(void) {
     BCState *st = g_new0(BCState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
@@ -440,6 +441,21 @@ GtkWidget *image_brightness_contrast_create(void) {
     gtk_widget_add_css_class(pic, "image-viewer-canvas");
     st->picture = pic;
 
+    
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
+
     gtk_box_append(GTK_BOX(editor), bar);
     gtk_box_append(GTK_BOX(editor),
                    gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
@@ -450,6 +466,8 @@ GtkWidget *image_brightness_contrast_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
 
     g_object_set_data_full(G_OBJECT(root), "bc-state", st, (GDestroyNotify)bc_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     g_signal_connect(st->brightness_scale, "value-changed",
                      G_CALLBACK(on_brightness_changed), root);

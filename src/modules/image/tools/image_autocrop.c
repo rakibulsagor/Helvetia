@@ -16,6 +16,7 @@ typedef struct {
     GdkPixbuf *preview;
     char      *path;
     int        img_w, img_h;
+    double     zoom;
     GtkWidget *stack, *picture, *root;
     GtkWidget *undo_btn;
 } AcState;
@@ -79,12 +80,11 @@ static gpointer get_state(GtkWidget *v) {
 static void ac_update(AcState *st) {
     GdkPixbuf *src = st->preview ? st->preview : st->original;
     if (!src) return;
-    GdkTexture *t = gdk_texture_new_for_pixbuf(src);
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(t));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(src)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->picture),
                                  GTK_CONTENT_FIT_CONTAIN);
     gtk_picture_set_can_shrink(GTK_PICTURE(st->picture), TRUE);
-    g_object_unref(t);
+    
 }
 
 static void ac_load(AcState *st, const char *path) {
@@ -271,6 +271,21 @@ GtkWidget *image_straighten_create(void) {
     GtkWidget *pic = gtk_picture_new();
     gtk_widget_set_vexpand(pic, TRUE);
     st->base.picture = pic;
+
+    
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
 
     gtk_box_append(GTK_BOX(editor), bar);
     gtk_box_append(GTK_BOX(editor),
@@ -491,6 +506,21 @@ GtkWidget *image_autocrop_create(void) {
     GtkWidget *pic = gtk_picture_new();
     gtk_widget_set_vexpand(pic, TRUE);
     st->base.picture = pic;
+
+    
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
 
     gtk_box_append(GTK_BOX(editor), bar);
     gtk_box_append(GTK_BOX(editor),

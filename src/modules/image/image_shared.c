@@ -512,3 +512,82 @@ GtkWidget *image_reset_button(GCallback on_reset, gpointer user_data) {
         g_signal_connect(btn, "clicked", on_reset, user_data);
     return btn;
 }
+
+/* ------------------------------------------------------------------ */
+/* Zoom support                                                       */
+/* ------------------------------------------------------------------ */
+
+typedef struct {
+    GtkWidget *picture;
+    double    *zoom;
+} ZoomCtx;
+
+static void zoom_apply(ZoomCtx *z) {
+    if (!z->picture || !z->zoom) return;
+
+    GdkPaintable *p = gtk_picture_get_paintable(GTK_PICTURE(z->picture));
+    if (!p) return;
+
+    int w = gdk_paintable_get_intrinsic_width(p);
+    int h = gdk_paintable_get_intrinsic_height(p);
+    if (w <= 0 || h <= 0) return;
+
+    int nw = (int)(w * (*z->zoom) + 0.5);
+    int nh = (int)(h * (*z->zoom) + 0.5);
+    gtk_widget_set_size_request(z->picture, nw, nh);
+}
+
+static void on_zoom_ctx_free(ZoomCtx *z) { g_free(z); }
+
+void image_register_zoom(GtkWidget *root, GtkWidget *picture, double *zoom) {
+    ZoomCtx *z = g_new0(ZoomCtx, 1);
+    z->picture = picture;
+    z->zoom = zoom;
+    g_object_set_data_full(G_OBJECT(root), "zoom-ctx", z,
+                            (GDestroyNotify)on_zoom_ctx_free);
+}
+
+void image_zoom_in(GtkWidget *root) {
+    ZoomCtx *z = g_object_get_data(G_OBJECT(root), "zoom-ctx");
+    if (!z) return;
+    *z->zoom *= 1.25;
+    if (*z->zoom > 10.0) *z->zoom = 10.0;
+    zoom_apply(z);
+}
+
+void image_zoom_out(GtkWidget *root) {
+    ZoomCtx *z = g_object_get_data(G_OBJECT(root), "zoom-ctx");
+    if (!z) return;
+    *z->zoom /= 1.25;
+    if (*z->zoom < 0.1) *z->zoom = 0.1;
+    zoom_apply(z);
+}
+
+void image_zoom_reset(GtkWidget *root) {
+    ZoomCtx *z = g_object_get_data(G_OBJECT(root), "zoom-ctx");
+    if (!z) return;
+    *z->zoom = 1.0;
+    zoom_apply(z);
+}
+
+static gboolean on_zoom_key(GtkEventControllerKey *c, guint key, guint code,
+                             GdkModifierType mods, gpointer root) {
+    (void)c; (void)code;
+    if (!(mods & GDK_CONTROL_MASK)) return FALSE;
+    if (key == GDK_KEY_plus || key == GDK_KEY_equal || key == GDK_KEY_KP_Add) {
+        image_zoom_in(root); return TRUE;
+    }
+    if (key == GDK_KEY_minus || key == GDK_KEY_KP_Subtract) {
+        image_zoom_out(root); return TRUE;
+    }
+    if (key == GDK_KEY_0 || key == GDK_KEY_KP_0) {
+        image_zoom_reset(root); return TRUE;
+    }
+    return FALSE;
+}
+
+void image_install_zoom_shortcuts(GtkWidget *root) {
+    GtkEventController *c = gtk_event_controller_key_new();
+    g_signal_connect(c, "key-pressed", G_CALLBACK(on_zoom_key), root);
+    gtk_widget_add_controller(root, c);
+}

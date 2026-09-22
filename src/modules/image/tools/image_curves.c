@@ -31,6 +31,7 @@ typedef struct {
 
     int        drag_idx;
 
+    double     zoom;
     GtkWidget *stack, *picture, *curve_area, *root;
     GtkWidget *undo_btn;
     GtkWidget *channel_dd;
@@ -105,12 +106,11 @@ static void build_lut(CurvePoint *pts, int n, guchar lut[256]) {
 static void update_preview(CurvesState *st) {
     GdkPixbuf *src = st->preview ? st->preview : st->original;
     if (!src) return;
-    GdkTexture *t = gdk_texture_new_for_pixbuf(src);
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(t));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(src)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->picture),
                                  GTK_CONTENT_FIT_CONTAIN);
     gtk_picture_set_can_shrink(GTK_PICTURE(st->picture), TRUE);
-    g_object_unref(t);
+    
 }
 
 static gboolean is_identity(CurvesState *st) {
@@ -559,6 +559,7 @@ GtkWidget *image_curves_create(void) {
     st->drag_idx = -1;
     st->channel = 0;
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     for (int c = 0; c < 4; c++) default_curve(st->channels[c], &st->channels_n[c]);
     memcpy(st->points, st->channels[0], sizeof(CurvePoint) * MAX_POINTS);
     st->n_points = st->channels_n[0];
@@ -647,6 +648,21 @@ GtkWidget *image_curves_create(void) {
     gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
+
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
+
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), image_new_image_button(on_drop, root));
     gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
@@ -675,6 +691,8 @@ GtkWidget *image_curves_create(void) {
 
     g_object_set_data_full(G_OBJECT(root), "curves-state", st,
                            (GDestroyNotify)curves_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     g_signal_connect(st->channel_dd, "notify::selected",
                      G_CALLBACK(on_channel_changed), root);

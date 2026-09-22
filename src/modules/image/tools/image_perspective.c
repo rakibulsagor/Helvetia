@@ -11,6 +11,7 @@ typedef struct {
     char      *path;
     int        img_w, img_h;
     double     tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y;
+    double     zoom;
     GtkWidget *stack, *picture, *root;
     GtkWidget *undo_btn;
 } PerspState;
@@ -74,12 +75,11 @@ static PerspState *get_state(GtkWidget *v) {
 static void update_preview(PerspState *st) {
     GdkPixbuf *src = st->preview ? st->preview : st->original;
     if (!src) return;
-    GdkTexture *t = gdk_texture_new_for_pixbuf(src);
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(t));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(src)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->picture),
                                  GTK_CONTENT_FIT_CONTAIN);
     gtk_picture_set_can_shrink(GTK_PICTURE(st->picture), TRUE);
-    g_object_unref(t);
+    
 }
 
 static GdkPixbuf *apply_perspective(PerspState *st) {

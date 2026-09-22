@@ -31,7 +31,8 @@ typedef struct {
     gboolean   ae_auto_wb;
     gboolean   ae_auto_sat;
 
-    GtkWidget *stack, *picture, *root;
+    double     zoom;
+    GtkWidget *stack, *picture, *overlay, *root;
     GtkWidget *undo_btn;
 } ToneState;
 
@@ -91,9 +92,6 @@ static void update_preview(ToneState *st) {
     if (!src) return;
     GdkTexture *t = gdk_texture_new_for_pixbuf(src);
     gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(t));
-    gtk_picture_set_content_fit(GTK_PICTURE(st->picture),
-                                 GTK_CONTENT_FIT_CONTAIN);
-    gtk_picture_set_can_shrink(GTK_PICTURE(st->picture), TRUE);
     g_object_unref(t);
 }
 
@@ -449,22 +447,44 @@ static GtkWidget *build_shell(ToneState *st, GtkWidget **out_sliders,
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
     gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), st->root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), st->root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), st->root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(bar), new_img);
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), save);
 
     GtkWidget *pic = gtk_picture_new();
-    gtk_widget_set_vexpand(pic, TRUE);
-    gtk_widget_set_halign(pic, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(pic, GTK_ALIGN_CENTER);
+    gtk_picture_set_can_shrink(GTK_PICTURE(pic), FALSE);
+    gtk_picture_set_content_fit(GTK_PICTURE(pic), GTK_CONTENT_FIT_CONTAIN);
     gtk_widget_add_css_class(pic, "image-viewer-canvas");
     st->picture = pic;
+
+    GtkWidget *scroller = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), pic);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+
+    GtkWidget *overlay = gtk_overlay_new();
+    gtk_overlay_set_child(GTK_OVERLAY(overlay), scroller);
+    gtk_widget_set_vexpand(overlay, TRUE);
+    st->overlay = overlay;
 
     gtk_box_append(GTK_BOX(editor), sliders);
     gtk_box_append(GTK_BOX(editor), bar);
     gtk_box_append(GTK_BOX(editor),
                    gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
-    gtk_box_append(GTK_BOX(editor), pic);
+    gtk_box_append(GTK_BOX(editor), overlay);
     gtk_stack_add_named(GTK_STACK(stack), editor, "editor");
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
 

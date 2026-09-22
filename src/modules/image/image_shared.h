@@ -101,4 +101,10 @@ GtkWidget *image_undo_button(GCallback on_undo, gpointer user_data);
 /* Build a "Reset" button. It calls on_reset(user_data) when clicked. */
 GtkWidget *image_reset_button(GCallback on_reset, gpointer user_data);
 
+void image_zoom_in(GtkWidget *root);
+void image_zoom_out(GtkWidget *root);
+void image_zoom_reset(GtkWidget *root);
+void image_install_zoom_shortcuts(GtkWidget *root);
+void image_register_zoom(GtkWidget *root, GtkWidget *picture, double *zoom);
+
 G_END_DECLS

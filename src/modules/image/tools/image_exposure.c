@@ -18,6 +18,7 @@ typedef struct {
     double     ev;            /* -3.0 .. +3.0, in stops */
     int        black;         /* 0 .. 100, percentage of black point lift */
 
+    double     zoom;
     GtkWidget *stack, *picture, *root;
     GtkWidget *ev_scale, *ev_lbl;
     GtkWidget *black_scale, *black_lbl;
@@ -37,12 +38,11 @@ static ExpoState *get_state(GtkWidget *v) {
 static void update_preview(ExpoState *st) {
     GdkPixbuf *src = st->preview ? st->preview : st->original;
     if (!src) return;
-    GdkTexture *t = gdk_texture_new_for_pixbuf(src);
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(t));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(src)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->picture),
                                  GTK_CONTENT_FIT_CONTAIN);
     gtk_picture_set_can_shrink(GTK_PICTURE(st->picture), TRUE);
-    g_object_unref(t);
+    
 }
 
 static GdkPixbuf *apply_exposure(ExpoState *st) {
@@ -310,6 +310,7 @@ static GtkWidget *make_slider_row(const char *label,
 GtkWidget *image_exposure_create(void) {
     ExpoState *st = g_new0(ExpoState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
@@ -373,6 +374,21 @@ GtkWidget *image_exposure_create(void) {
 
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
+
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
+
     gtk_box_append(GTK_BOX(bar), sp);
     gtk_box_append(GTK_BOX(bar), image_new_image_button(on_drop, root));
     gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
@@ -397,6 +413,8 @@ GtkWidget *image_exposure_create(void) {
 
     g_object_set_data_full(G_OBJECT(root), "expo-state", st,
                            (GDestroyNotify)expo_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     g_signal_connect(save, "clicked", G_CALLBACK(on_save), root);
 

@@ -28,6 +28,7 @@ typedef struct {
     double     cb_highs_r,   cb_highs_g,   cb_highs_b;
     int        cb_range;     /* 0=shadows, 1=mids, 2=highlights */
 
+    double     zoom;
     GtkWidget *stack, *picture, *root;
     GtkWidget *undo_btn;
     GtkWidget *reset_btn;
@@ -86,12 +87,11 @@ static void on_undo(GtkButton *b, gpointer d) {
 static void update_preview(ColorState *st) {
     GdkPixbuf *src = st->preview ? st->preview : st->original;
     if (!src) return;
-    GdkTexture *t = gdk_texture_new_for_pixbuf(src);
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(t));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(src)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->picture),
                                  GTK_CONTENT_FIT_CONTAIN);
     gtk_picture_set_can_shrink(GTK_PICTURE(st->picture), TRUE);
-    g_object_unref(t);
+    
 }
 
 static void clear_undo(ColorState *st) {
@@ -112,6 +112,7 @@ static void on_save_common(ColorState *st, const char *prefix) {
 }
 
 static void on_drop_common(ColorState *st, const char *path) {
+    st->zoom = 1.0;
     GError *e = NULL;
     GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
@@ -429,6 +430,21 @@ static GtkWidget *build_editor_shell(ColorState *st,
 
     gtk_box_append(GTK_BOX(bar), st->undo_btn);
     gtk_box_append(GTK_BOX(bar), reset);
+
+    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
+    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
+    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
+    gtk_widget_add_css_class(z_out, "flat");
+    gtk_widget_add_css_class(z_in, "flat");
+    gtk_widget_add_css_class(z_1, "flat");
+    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), st->root);
+    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), st->root);
+    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), st->root);
+    gtk_box_append(GTK_BOX(bar), z_out);
+    gtk_box_append(GTK_BOX(bar), z_1);
+    gtk_box_append(GTK_BOX(bar), z_in);
+
     gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
     gtk_box_append(GTK_BOX(bar), new_img);
     gtk_box_append(GTK_BOX(bar), sp);
@@ -521,6 +537,7 @@ const HelvetiaToolCommand image_saturation_vibrance_commands[] = {
 GtkWidget *image_saturation_vibrance_create(void) {
     ColorState *st = g_new0(ColorState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
@@ -553,6 +570,8 @@ GtkWidget *image_saturation_vibrance_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "color-state", st,
                            (GDestroyNotify)color_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     return root;
 }
@@ -607,6 +626,7 @@ const HelvetiaToolCommand image_hue_shift_commands[] = {
 GtkWidget *image_hue_shift_create(void) {
     ColorState *st = g_new0(ColorState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
@@ -632,6 +652,8 @@ GtkWidget *image_hue_shift_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "color-state", st,
                            (GDestroyNotify)color_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     return root;
 }
@@ -698,6 +720,7 @@ const HelvetiaToolCommand image_white_balance_commands[] = {
 GtkWidget *image_white_balance_create(void) {
     ColorState *st = g_new0(ColorState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_vexpand(root, TRUE);
@@ -730,6 +753,8 @@ GtkWidget *image_white_balance_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "color-state", st,
                            (GDestroyNotify)color_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     return root;
 }
@@ -813,6 +838,7 @@ const HelvetiaToolCommand image_color_balance_commands[] = {
 GtkWidget *image_color_balance_create(void) {
     ColorState *st = g_new0(ColorState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->cb_range = 1;   /* mids by default */
 
     GtkWidget *root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -870,6 +896,8 @@ GtkWidget *image_color_balance_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "color-state", st,
                            (GDestroyNotify)color_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     return root;
 }

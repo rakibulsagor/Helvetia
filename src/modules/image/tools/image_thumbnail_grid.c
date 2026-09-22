@@ -40,10 +40,9 @@ static void on_thumb(GtkButton *btn, gpointer d) {
     GError *e = NULL;
     GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
     if (!pb) { image_show_error(view, e->message); g_error_free(e); return; }
-    GdkTexture *t = gdk_texture_new_for_pixbuf(pb);
-    gtk_picture_set_paintable(GTK_PICTURE(st->full_pic), GDK_PAINTABLE(t));
+    gtk_picture_set_paintable(GTK_PICTURE(st->full_pic), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(pb)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->full_pic), GTK_CONTENT_FIT_CONTAIN);
-    g_object_unref(t);
+    
     g_object_unref(pb);
 
     char *name = g_path_get_basename(path);
@@ -297,7 +296,7 @@ static void on_export_dialog_finished(GObject *src, GAsyncResult *res, gpointer 
     GTask *t = g_task_new(NULL, NULL, sheet_done, c->view);
     g_task_set_task_data(t, c->job, (GDestroyNotify)sheet_job_free);
     g_task_run_in_thread(t, sheet_worker);
-    g_object_unref(t);
+    
     g_free(c);
 }
 

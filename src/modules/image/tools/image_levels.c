@@ -25,6 +25,7 @@ typedef struct {
     guint      hist_max;
 
     GtkWidget *stack;
+    double zoom;
     GtkWidget *picture;
     GtkWidget *hist_area;
     GtkWidget *root;
@@ -154,12 +155,11 @@ static void on_hist_draw(GtkDrawingArea *area, cairo_t *cr,
 static void update_preview(LevelsState *st) {
     GdkPixbuf *src = st->preview ? st->preview : st->original;
     if (!src) return;
-    GdkTexture *t = gdk_texture_new_for_pixbuf(src);
-    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(t));
+    gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(src)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->picture),
                                  GTK_CONTENT_FIT_CONTAIN);
     gtk_picture_set_can_shrink(GTK_PICTURE(st->picture), TRUE);
-    g_object_unref(t);
+    
 }
 
 /* ------------------------------------------------------------------ */
@@ -588,6 +588,7 @@ static GtkWidget *build_slider_row(const char *label,
 GtkWidget *image_levels_create(void) {
     LevelsState *st = g_new0(LevelsState, 1);
     st->undo_stack = g_ptr_array_new();
+    st->zoom = 1.0;
     st->in_white = 255;
     st->out_white = 255;
     st->gamma = 1.0;
@@ -726,6 +727,8 @@ GtkWidget *image_levels_create(void) {
     gtk_box_append(GTK_BOX(root), stack);
 
     g_object_set_data_full(G_OBJECT(root), "levels-state", st, (GDestroyNotify)levels_state_free);
+    image_register_zoom(root, st->picture, &st->zoom);
+    image_install_zoom_shortcuts(root);
 
     
     g_signal_connect(save,  "clicked", G_CALLBACK(on_save),  root);
