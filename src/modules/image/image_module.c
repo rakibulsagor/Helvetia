@@ -18,6 +18,8 @@
 #include "tools/image_filter_color.h"
 #include "tools/image_filter_art.h"
 #include "tools/image_filter_struct.h"
+#include "tools/image_denoise.h"
+#include "tools/image_mono.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -61,6 +63,8 @@ static const HelvetiaTool category_filters[] = {
     { .id = "image_blur", .name = "Blur", .description = "Soften the image with Gaussian, box, or motion blur", .icon_name = "blur-symbolic", .keywords = (const char*[]){ "blur", "soften", "gaussian", "motion", "box", NULL }, .create_view = image_blur_create, .commands = image_blur_commands, .on_close = image_blur_on_close },
     { .id = "image_sharpen", .name = "Sharpen", .description = "Increase edge contrast", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "sharpen", "crisp", "edges", "contrast", NULL }, .create_view = image_sharpen_create, .commands = image_sharpen_commands, .on_close = image_sharpen_on_close },
     { .id = "image_unsharp_mask", .name = "Unsharp Mask", .description = "Professional sharpening with radius and threshold", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "unsharp", "mask", "sharpening", "amount", "radius", "threshold", NULL }, .create_view = image_unsharp_mask_create, .commands = image_unsharp_mask_commands, .on_close = image_unsharp_mask_on_close },
+    { .id = "image_noise_reduction", .name = "Noise Reduction", .description = "Median filter — removes salt-and-pepper noise", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "noise", "reduction", "median", "filter", "grain", NULL }, .create_view = image_noise_reduction_create, .commands = image_noise_reduction_commands, .on_close = image_noise_reduction_on_close },
+    { .id = "image_denoise", .name = "Denoise", .description = "Bilateral filter — smooths noise, preserves edges", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "denoise", "bilateral", "edge", "preserving", "smooth", "noise", NULL }, .create_view = image_denoise_create, .commands = image_denoise_commands, .on_close = image_denoise_on_close },
     { .id = "image_sepia", .name = "Sepia", .description = "Classic warm tone", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "sepia", "warm", "vintage", "brown", NULL }, .create_view = image_sepia_create, .commands = image_sepia_commands, .on_close = image_sepia_on_close },
     { .id = "image_grayscale", .name = "Grayscale", .description = "Convert to black and white", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "grayscale", "monochrome", "bw", "black", "white", NULL }, .create_view = image_grayscale_create, .commands = image_grayscale_commands, .on_close = image_grayscale_on_close },
     { .id = "image_invert", .name = "Invert", .description = "Invert all colors", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "invert", "negative", "colors", NULL }, .create_view = image_invert_create, .commands = image_invert_commands, .on_close = image_invert_on_close },

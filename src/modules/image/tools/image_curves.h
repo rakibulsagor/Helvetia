@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../core/tool_registry.h"
+#include "../../../core/plugin.h"
 
 GtkWidget *image_curves_create(void);
 extern const HelvetiaToolCommand image_curves_commands[];
