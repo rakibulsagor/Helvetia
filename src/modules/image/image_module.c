@@ -19,6 +19,7 @@
 #include "tools/image_grain.h"
 #include "tools/image_denoise.h"
 #include "tools/image_mono.h"
+#include "tools/image_draw.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -79,6 +80,17 @@ static const HelvetiaTool category_filters[] = {
     { 0 }
 };
 
+static const HelvetiaTool category_drawing[] = {
+    { .id = "image_brush", .name = "Brush Tool", .description = "Paint with adjustable color, size, opacity", .icon_name = "draw-brush-symbolic", .keywords = (const char*[]){ "brush", "paint", "draw", "color", "stroke", NULL }, .create_view = image_brush_create, .commands = image_brush_commands, .on_close = image_brush_on_close },
+    { .id = "image_eraser", .name = "Eraser", .description = "Erase to white or transparent", .icon_name = "draw-eraser-symbolic", .keywords = (const char*[]){ "eraser", "remove", "delete", "white", "transparent", NULL }, .create_view = image_eraser_create, .commands = image_eraser_commands, .on_close = image_eraser_on_close },
+    { .id = "image_fill", .name = "Fill / Bucket", .description = "Flood fill a region with a color", .icon_name = "color-fill-symbolic", .keywords = (const char*[]){ "fill", "bucket", "flood", "paint", "region", NULL }, .create_view = image_fill_create, .commands = image_fill_commands, .on_close = image_fill_on_close },
+    { .id = "image_gradient", .name = "Gradient Tool", .description = "Draw linear or radial gradients", .icon_name = "color-gradient-symbolic", .keywords = (const char*[]){ "gradient", "linear", "radial", "blend", "transition", NULL }, .create_view = image_gradient_create, .commands = image_gradient_commands, .on_close = image_gradient_on_close },
+    { .id = "image_text", .name = "Text Tool", .description = "Add text to an image", .icon_name = "insert-text-symbolic", .keywords = (const char*[]){ "text", "add", "type", "font", "caption", "watermark", NULL }, .create_view = image_text_create, .commands = image_text_commands, .on_close = image_text_on_close },
+    { .id = "image_shape", .name = "Shape Tool", .description = "Draw rectangles, ellipses, and lines", .icon_name = "insert-object-symbolic", .keywords = (const char*[]){ "shape", "rectangle", "ellipse", "line", "draw", NULL }, .create_view = image_shape_create, .commands = image_shape_commands, .on_close = image_shape_on_close },
+    { .id = "image_arrow", .name = "Arrow Tool", .description = "Draw arrows for annotation", .icon_name = "insert-object-symbolic", .keywords = (const char*[]){ "arrow", "point", "annotation", "direction", NULL }, .create_view = image_arrow_create, .commands = image_arrow_commands, .on_close = image_arrow_on_close },
+    { 0 }
+};
+
 static const HelvetiaSubcategory image_subcategories[] = {
     {
         .name = "Viewing & Inspection",
@@ -95,6 +107,10 @@ static const HelvetiaSubcategory image_subcategories[] = {
     {
         .name = "Filters",
         .tools = category_filters,
+    },
+    {
+        .name = "Drawing & Compositing",
+        .tools = category_drawing,
     },
     { 0 }
 };
