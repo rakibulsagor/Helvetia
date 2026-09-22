@@ -15,9 +15,8 @@
 #include "tools/image_color.h"
 #include "tools/image_tone.h"
 #include "tools/image_sharpen.h"
-#include "tools/image_filter_color.h"
-#include "tools/image_filter_art.h"
-#include "tools/image_filter_struct.h"
+#include "tools/image_posterize.h"
+#include "tools/image_grain.h"
 #include "tools/image_denoise.h"
 #include "tools/image_mono.h"
 #include <stddef.h>

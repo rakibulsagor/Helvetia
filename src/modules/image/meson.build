@@ -17,9 +17,8 @@ image_sources = files(
   'tools/image_color.c',
   'tools/image_tone.c',
   'tools/image_sharpen.c',
-  'tools/image_filter_color.c',
-  'tools/image_filter_art.c',
-  'tools/image_filter_struct.c',
+  'tools/image_posterize.c',
+  'tools/image_grain.c',
   'tools/image_denoise.c',
   'tools/image_mono.c',
 )
