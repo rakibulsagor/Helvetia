@@ -20,6 +20,7 @@
 #include "tools/image_denoise.h"
 #include "tools/image_mono.h"
 #include "tools/image_draw.h"
+#include "tools/image_stamp.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -88,6 +89,12 @@ static const HelvetiaTool category_drawing[] = {
     { .id = "image_text", .name = "Text Tool", .description = "Add text to an image", .icon_name = "insert-text-symbolic", .keywords = (const char*[]){ "text", "add", "type", "font", "caption", "watermark", NULL }, .create_view = image_text_create, .commands = image_text_commands, .on_close = image_text_on_close },
     { .id = "image_shape", .name = "Shape Tool", .description = "Draw rectangles, ellipses, and lines", .icon_name = "insert-object-symbolic", .keywords = (const char*[]){ "shape", "rectangle", "ellipse", "line", "draw", NULL }, .create_view = image_shape_create, .commands = image_shape_commands, .on_close = image_shape_on_close },
     { .id = "image_arrow", .name = "Arrow Tool", .description = "Draw arrows for annotation", .icon_name = "insert-object-symbolic", .keywords = (const char*[]){ "arrow", "point", "annotation", "direction", NULL }, .create_view = image_arrow_create, .commands = image_arrow_commands, .on_close = image_arrow_on_close },
+    { .id = "image_eyedropper", .name = "Eyedropper", .description = "Pick a color from the image", .icon_name = "color-select-symbolic", .keywords = (const char*[]){ "eyedropper", "color", "picker", "sample", NULL }, .create_view = image_eyedropper_create, .commands = image_eyedropper_commands, .on_close = image_eyedropper_on_close },
+    { .id = "image_dodge_burn", .name = "Dodge / Burn", .description = "Lighten or darken areas", .icon_name = "draw-brush-symbolic", .keywords = (const char*[]){ "dodge", "burn", "lighten", "darken", "shadows", NULL }, .create_view = image_dodge_burn_create, .commands = image_dodge_burn_commands, .on_close = image_dodge_burn_on_close },
+    { .id = "image_clone_stamp", .name = "Clone Stamp", .description = "Copy pixels from a source point", .icon_name = "tool-clone-symbolic", .keywords = (const char*[]){ "clone", "stamp", "copy", "duplicate", "source", NULL }, .create_view = image_clone_stamp_create, .commands = image_clone_stamp_commands, .on_close = image_clone_stamp_on_close },
+    { .id = "image_healing_brush", .name = "Healing Brush", .description = "Blend-aware retouch", .icon_name = "tool-heal-symbolic", .keywords = (const char*[]){ "healing", "brush", "blemish", "retouch", "remove", NULL }, .create_view = image_healing_brush_create, .commands = image_healing_brush_commands, .on_close = image_healing_brush_on_close },
+    { .id = "image_smudge", .name = "Smudge Tool", .description = "Push pixels around like finger paint", .icon_name = "draw-brush-symbolic", .keywords = (const char*[]){ "smudge", "smear", "push", "paint", NULL }, .create_view = image_smudge_create, .commands = image_smudge_commands, .on_close = image_smudge_on_close },
+    { .id = "image_opacity", .name = "Opacity Control", .description = "Blend between edited and original", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "opacity", "blend", "mix", "fade", "original", NULL }, .create_view = image_opacity_create, .commands = image_opacity_commands, .on_close = image_opacity_on_close },
     { 0 }
 };
 

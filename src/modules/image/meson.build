@@ -22,6 +22,7 @@ image_sources = files(
   'tools/image_denoise.c',
   'tools/image_mono.c',
   'tools/image_draw.c',
+  'tools/image_stamp.c',
 )
 
 helvetia_image_lib = static_library('helvetia_image',
