@@ -217,7 +217,7 @@ static void on_drop(const char *path, gpointer d) {
     gtk_widget_set_sensitive(st->undo_btn, FALSE);
 
     st->original = pb;
-    st->first_original = g_object_ref(pb);
+    st->first_original = gdk_pixbuf_copy(pb);
     st->path = g_strdup(path);
     st->ev = 0;
     st->black = 0;

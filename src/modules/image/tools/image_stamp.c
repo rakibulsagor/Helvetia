@@ -75,7 +75,8 @@ static StampState *get_state(GtkWidget *v) {
 
 static void push_undo(StampState *st) {
     if (!st->current) return;
-    g_ptr_array_add(st->undo_stack, g_object_ref(st->current));
+    GdkPixbuf *copy = gdk_pixbuf_copy(st->current);
+    g_ptr_array_add(st->undo_stack, copy);
     gtk_widget_set_sensitive(st->undo_btn, TRUE);
 }
 
@@ -727,7 +728,7 @@ static void on_drop_common(StampState *st, const char *path) {
     clear_undo(st);
 
     st->current = pb;
-    st->first_original = g_object_ref(pb);
+    st->first_original = gdk_pixbuf_copy(pb);
     st->path = g_strdup(path);
     st->clone_alt_set = FALSE;
 

@@ -476,7 +476,7 @@ static void on_drop(const char *path, gpointer d) {
     g_free(st->path);
 
     g_clear_object(&st->first_original);
-    st->first_original = g_object_ref(pb);
+    st->first_original = gdk_pixbuf_copy(pb);
     if (st->undo_stack) {
         for (guint i = 0; i < st->undo_stack->len; i++)
             g_free(g_ptr_array_index(st->undo_stack, i));

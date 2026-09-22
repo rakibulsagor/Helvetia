@@ -101,7 +101,7 @@ static void geo_load(GeoState *st, const char *path) {
     g_free(st->path);
 
     st->original = pb;
-    st->first_original = g_object_ref(pb);
+    st->first_original = gdk_pixbuf_copy(pb);
     st->path = g_strdup(path);
     st->img_w = gdk_pixbuf_get_width(pb);
     st->img_h = gdk_pixbuf_get_height(pb);

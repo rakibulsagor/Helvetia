@@ -289,7 +289,7 @@ static void on_save_done(GObject *src, GAsyncResult *res, gpointer data) {
 
     if (e) {
         if (!g_error_matches(e, GTK_DIALOG_ERROR, GTK_DIALOG_ERROR_DISMISSED))
-            g_warning("save: %s", e->message);
+            g_warning("save dialog: %s", e->message);
         g_error_free(e);
         goto cleanup;
     }
@@ -297,28 +297,46 @@ static void on_save_done(GObject *src, GAsyncResult *res, gpointer data) {
     char *path = g_file_get_path(f);
     g_object_unref(f);
 
-    if (path) {
-        /* Detect format from extension */
-        const char *fmt = "png";
-        const char *dot = strrchr(path, '.');
-        if (dot) {
-            if (g_ascii_strcasecmp(dot, ".jpg") == 0 ||
-                g_ascii_strcasecmp(dot, ".jpeg") == 0) fmt = "jpeg";
-            else if (g_ascii_strcasecmp(dot, ".webp") == 0) fmt = "webp";
-            else if (g_ascii_strcasecmp(dot, ".bmp") == 0) fmt = "bmp";
-            else if (g_ascii_strcasecmp(dot, ".tiff") == 0) fmt = "tiff";
-            else if (g_ascii_strcasecmp(dot, ".tif") == 0) fmt = "tiff";
-        }
+    if (!path) { goto cleanup; }
 
-        GError *save_err = NULL;
-        if (!gdk_pixbuf_save(c->pixbuf, path, fmt, &save_err,
-                             fmt[0] == 'j' ? "quality" : NULL,
-                             fmt[0] == 'j' ? "92" : NULL, NULL)) {
-            g_warning("save failed: %s", save_err->message);
-            g_error_free(save_err);
-        }
+    /* Pick format from extension */
+    const char *fmt = "png";
+    const char *dot = strrchr(path, '.');
+    if (dot) {
+        if (!g_ascii_strcasecmp(dot, ".jpg") ||
+            !g_ascii_strcasecmp(dot, ".jpeg")) fmt = "jpeg";
+        else if (!g_ascii_strcasecmp(dot, ".png")) fmt = "png";
+        else if (!g_ascii_strcasecmp(dot, ".bmp")) fmt = "bmp";
+        else if (!g_ascii_strcasecmp(dot, ".tif") ||
+                 !g_ascii_strcasecmp(dot, ".tiff")) fmt = "tiff";
+    } else {
+        /* No extension — append .png */
+        char *fixed = g_strconcat(path, ".png", NULL);
         g_free(path);
+        path = fixed;
     }
+
+    /* Ensure we save RGBA with alpha if the pixbuf has it */
+    GError *err = NULL;
+    gboolean ok;
+    if (strcmp(fmt, "jpeg") == 0) {
+        /* JPEG has no alpha */
+        ok = gdk_pixbuf_save(c->pixbuf, path, "jpeg", &err,
+                             "quality", "92", NULL);
+    } else if (strcmp(fmt, "png") == 0) {
+        ok = gdk_pixbuf_save(c->pixbuf, path, "png", &err,
+                             "compression", "6", NULL);
+    } else {
+        ok = gdk_pixbuf_save(c->pixbuf, path, fmt, &err, NULL);
+    }
+
+    if (!ok) {
+        g_warning("save failed: %s", err ? err->message : "unknown");
+        if (err) g_error_free(err);
+    } else {
+        g_message("Saved: %s", path);
+    }
+    g_free(path);
 
 cleanup:
     g_object_unref(c->pixbuf);
@@ -328,8 +346,13 @@ cleanup:
 void image_save_pixbuf_dialog(GtkWidget *parent,
                                GdkPixbuf *pixbuf,
                                const char *suggested_name) {
+    if (!parent || !pixbuf) return;
+
     GtkRoot *root = gtk_widget_get_root(parent);
-    if (!root || !GTK_IS_WINDOW(root)) return;
+    if (!root || !GTK_IS_WINDOW(root)) {
+        g_warning("save: no window found");
+        return;
+    }
 
     GtkFileDialog *dlg = gtk_file_dialog_new();
     gtk_file_dialog_set_title(dlg, "Save image");
@@ -341,14 +364,12 @@ void image_save_pixbuf_dialog(GtkWidget *parent,
     GtkFileFilter *png = gtk_file_filter_new();
     gtk_file_filter_set_name(png, "PNG image");
     gtk_file_filter_add_pattern(png, "*.png");
-    gtk_file_filter_add_mime_type(png, "image/png");
     g_list_store_append(fs, png);
 
     GtkFileFilter *jpg = gtk_file_filter_new();
     gtk_file_filter_set_name(jpg, "JPEG image");
     gtk_file_filter_add_pattern(jpg, "*.jpg");
     gtk_file_filter_add_pattern(jpg, "*.jpeg");
-    gtk_file_filter_add_mime_type(jpg, "image/jpeg");
     g_list_store_append(fs, jpg);
 
     GtkFileFilter *all = gtk_file_filter_new();
@@ -357,6 +378,7 @@ void image_save_pixbuf_dialog(GtkWidget *parent,
     g_list_store_append(fs, all);
 
     gtk_file_dialog_set_filters(dlg, G_LIST_MODEL(fs));
+    gtk_file_dialog_set_default_filter(dlg, png);
 
     SaveCtx *c = g_new0(SaveCtx, 1);
     c->pixbuf = g_object_ref(pixbuf);

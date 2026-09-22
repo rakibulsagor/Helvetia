@@ -117,7 +117,7 @@ static void on_drop_common(PosterizeState *st, const char *path) {
     clear_undo(st);
 
     st->original = pb;
-    st->first_original = g_object_ref(pb);
+    st->first_original = gdk_pixbuf_copy(pb);
     st->path = g_strdup(path);
 
     st->post_levels = 6;

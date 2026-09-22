@@ -48,6 +48,10 @@ typedef struct {
     char      *text_content;
     int        font_size;      /* 8..200 */
     int        font_style;     /* 0 = normal, 1 = bold, 2 = italic */
+    gboolean   text_placed;      /* NEW: text is on canvas but not committed */
+    double     text_x, text_y;   /* NEW: current position */
+    gboolean   text_dragging;    /* NEW */
+    double     text_drag_ox, text_drag_oy;   /* NEW: drag offset */
 
     /* Shape */
     int        shape_type;     /* 0 = rect, 1 = ellipse, 2 = line */
@@ -74,7 +78,8 @@ static DrawState *get_state(GtkWidget *v) {
 
 static void push_undo(DrawState *st) {
     if (!st->current) return;
-    g_ptr_array_add(st->undo_stack, g_object_ref(st->current));
+    GdkPixbuf *copy = gdk_pixbuf_copy(st->current);
+    g_ptr_array_add(st->undo_stack, copy);
     gtk_widget_set_sensitive(st->undo_btn, TRUE);
 }
 
@@ -250,6 +255,35 @@ static void preview_draw(GtkDrawingArea *area, cairo_t *cr,
         cairo_pattern_destroy(pat);
     }
 
+    if (st->tool == TOOL_TEXT && st->text_placed && st->text_content) {
+        cairo_set_source_rgba(cr, st->color_r, st->color_g,
+                                st->color_b, st->opacity);
+        PangoLayout *layout = pango_cairo_create_layout(cr);
+        PangoFontDescription *desc = pango_font_description_new();
+        pango_font_description_set_size(desc, st->font_size * PANGO_SCALE);
+        if (st->font_style == 1)
+            pango_font_description_set_weight(desc, PANGO_WEIGHT_BOLD);
+        else if (st->font_style == 2)
+            pango_font_description_set_style(desc, PANGO_STYLE_ITALIC);
+        pango_layout_set_font_description(layout, desc);
+        pango_layout_set_text(layout, st->text_content, -1);
+        pango_font_description_free(desc);
+        cairo_move_to(cr, st->text_x, st->text_y);
+        pango_cairo_show_layout(cr, layout);
+        g_object_unref(layout);
+
+        /* Dashed border shows it's still movable */
+        PangoRectangle ink;
+        pango_layout_get_pixel_extents(layout, &ink, NULL);
+        cairo_set_dash(cr, (double[]){4, 4}, 2, 0);
+        cairo_set_line_width(cr, 1.0 / (st->opacity > 0 ? 1 : 1));
+        cairo_set_source_rgba(cr, 1, 1, 1, 0.6);
+        cairo_rectangle(cr, st->text_x + ink.x - 2, st->text_y + ink.y - 2,
+                        ink.width + 4, ink.height + 4);
+        cairo_stroke(cr);
+        cairo_set_dash(cr, NULL, 0, 0);
+    }
+
     cairo_restore(cr);
 }
 
@@ -356,13 +390,20 @@ static void commit_gradient(DrawState *st) {
     cairo_surface_destroy(surf);
 }
 
-static void commit_text_at(DrawState *st, double x, double y) {
-    if (!st->text_content || !*st->text_content) return;
+static void place_text(DrawState *st, double x, double y) {
+    st->text_x = x;
+    st->text_y = y;
+    st->text_placed = TRUE;
+    gtk_widget_queue_draw(st->draw_area);
+}
 
+static void commit_current_text(DrawState *st) {
+    if (!st->text_placed || !st->text_content || !*st->text_content) return;
+    push_undo(st);
+    /* Same rendering logic as commit_text_at, using st->text_x/y */
     cairo_surface_t *surf = pixbuf_surface(st->current);
     if (!surf) return;
     cairo_t *cr = cairo_create(surf);
-
     PangoLayout *layout = pango_cairo_create_layout(cr);
     PangoFontDescription *desc = pango_font_description_new();
     pango_font_description_set_size(desc, st->font_size * PANGO_SCALE);
@@ -371,18 +412,19 @@ static void commit_text_at(DrawState *st, double x, double y) {
     else if (st->font_style == 2)
         pango_font_description_set_style(desc, PANGO_STYLE_ITALIC);
     pango_layout_set_font_description(layout, desc);
-
     pango_layout_set_text(layout, st->text_content, -1);
     pango_font_description_free(desc);
-
     cairo_set_source_rgba(cr, st->color_r, st->color_g,
                             st->color_b, st->opacity);
-    cairo_move_to(cr, x, y);
+    cairo_move_to(cr, st->text_x, st->text_y);
     pango_cairo_show_layout(cr, layout);
     g_object_unref(layout);
-
     cairo_destroy(cr);
     cairo_surface_destroy(surf);
+
+    st->text_placed = FALSE;
+    gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+    gtk_widget_queue_draw(st->draw_area);
 }
 
 /* ================================================================== */
@@ -543,9 +585,13 @@ static void on_press(GtkGestureClick *g, int n_press,
             break;
 
         case TOOL_TEXT:
-            push_undo(st);
-            commit_text_at(st, ix, iy);
-            gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
+            if (!st->text_placed) {
+                place_text(st, ix, iy);
+            } else {
+                st->text_dragging = TRUE;
+                st->text_drag_ox = ix - st->text_x;
+                st->text_drag_oy = iy - st->text_y;
+            }
             break;
     }
 }
@@ -570,6 +616,11 @@ static void on_motion(GtkEventControllerMotion *c, double sx, double sy,
         st->cur_x = ix;
         st->cur_y = iy;
         gtk_widget_queue_draw(st->draw_area);
+    } else if (st->tool == TOOL_TEXT && st->text_dragging) {
+        st->text_x = ix - st->text_drag_ox;
+        st->text_y = iy - st->text_drag_oy;
+        gtk_widget_queue_draw(st->draw_area);
+        return;
     }
 }
 
@@ -587,6 +638,9 @@ static void on_release(GtkGestureClick *g, int n_press,
         default: break;
     }
     st->dragging = FALSE;
+    if (st->tool == TOOL_TEXT) {
+        st->text_dragging = FALSE;
+    }
     gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
     gtk_widget_queue_draw(st->draw_area);
 }
@@ -692,7 +746,7 @@ static void on_drop_common(DrawState *st, const char *path) {
     clear_undo(st);
 
     st->current = pb;
-    st->first_original = g_object_ref(pb);
+    st->first_original = gdk_pixbuf_copy(pb);
     st->path = g_strdup(path);
 
     gtk_picture_set_pixbuf(GTK_PICTURE(st->picture), st->current);
@@ -1192,6 +1246,12 @@ GtkWidget *image_text_create(void) {
     gtk_box_append(GTK_BOX(style_row), sl);
     gtk_box_append(GTK_BOX(style_row), style_dd);
     gtk_box_append(GTK_BOX(opts), style_row);
+
+    GtkWidget *commit_btn = gtk_button_new_with_label("Apply Text to Image");
+    gtk_widget_add_css_class(commit_btn, "suggested-action");
+    g_signal_connect_swapped(commit_btn, "clicked",
+        G_CALLBACK(commit_current_text), st);
+    gtk_box_append(GTK_BOX(opts), commit_btn);
 
     gtk_box_append(GTK_BOX(opts),
         make_color_button("Color", &st->color_r, &st->color_g, &st->color_b, st));

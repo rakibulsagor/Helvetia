@@ -263,7 +263,7 @@ static void on_drop(const char *path, gpointer d) {
     g_free(st->path);
 
     st->original = pb;
-    st->first_original = g_object_ref(pb);
+    st->first_original = gdk_pixbuf_copy(pb);
     st->path = g_strdup(path);
 
     if (st->undo_stack) {
