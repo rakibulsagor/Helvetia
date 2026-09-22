@@ -21,6 +21,7 @@
 #include "tools/image_mono.h"
 #include "tools/image_draw.h"
 #include "tools/image_stamp.h"
+#include "tools/image_layers.h"
 #include <stddef.h>
 
 static const HelvetiaTool category_viewing[] = {
@@ -96,6 +97,14 @@ static const HelvetiaTool category_drawing[] = {
     { 0 }
 };
 
+static const HelvetiaTool category_layers[] = {
+    { .id = "image_selection_tools", .name = "Selection Tools", .description = "Select regions using various shapes", .icon_name = "edit-select-all-symbolic", .keywords = (const char*[]){ "selection", "mask", "wand", "lasso", NULL }, .create_view = image_selection_tools_create, .commands = image_selection_tools_commands, .on_close = image_selection_tools_on_close },
+    { .id = "image_layer_manager", .name = "Layer Manager", .description = "Manage image layers", .icon_name = "format-indent-more-symbolic", .keywords = (const char*[]){ "layers", "stack", "manager", NULL }, .create_view = image_layer_manager_create, .commands = image_layer_manager_commands, .on_close = image_layer_manager_on_close },
+    { .id = "image_layer_masks", .name = "Layer Masks", .description = "Apply masks to layers", .icon_name = "object-inverse-symbolic", .keywords = (const char*[]){ "layer", "mask", "alpha", NULL }, .create_view = image_layer_masks_create, .commands = image_layer_masks_commands, .on_close = image_layer_masks_on_close },
+    { .id = "image_blend_modes", .name = "Blend Modes", .description = "Change layer blending modes", .icon_name = "preferences-color-symbolic", .keywords = (const char*[]){ "blend", "mode", "multiply", "screen", NULL }, .create_view = image_blend_modes_create, .commands = image_blend_modes_commands, .on_close = image_blend_modes_on_close },
+    { 0 }
+};
+
 static const HelvetiaSubcategory image_subcategories[] = {
     {
         .name = "Viewing & Inspection",
@@ -116,6 +125,10 @@ static const HelvetiaSubcategory image_subcategories[] = {
     {
         .name = "Drawing & Compositing",
         .tools = category_drawing,
+    },
+    {
+        .name = "Layers & Selections",
+        .tools = category_layers,
     },
     { 0 }
 };
