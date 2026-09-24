@@ -3,13 +3,13 @@
 #include <stddef.h>
 
 static const HelvetiaTool tools_organizing[] = {
-    { "merge_pdfs", "PDF Merger", "Merge multiple PDFs into one", "list-add-symbolic", (const char*[]){ "pdfs", "merge", "pdf", NULL }, "merge-pdfs", pdf_merge_create_view, NULL, NULL, pdf_merge_cmds },
-    { "split_pdf", "PDF Splitter", "Split PDF into multiple files", "list-remove-symbolic", (const char*[]){ "split", "pdf", NULL }, "split-pdf", pdf_split_create_view, NULL, NULL, pdf_split_cmds },
+    { .id = "merge_pdfs", .name = "PDF Merger", .description = "Merge multiple PDFs into one", .icon_name = "list-add-symbolic", .keywords = (const char*[]){ "pdfs", "merge", "pdf", NULL }, .cli_command = "merge-pdfs", .create_view = pdf_merge_create_view, .commands = pdf_merge_cmds },
+    { .id = "split_pdf", .name = "PDF Splitter", .description = "Split PDF into multiple files", .icon_name = "list-remove-symbolic", .keywords = (const char*[]){ "split", "pdf", NULL }, .cli_command = "split-pdf", .create_view = pdf_split_create_view, .commands = pdf_split_cmds },
     { 0 }
 };
 
 static const HelvetiaTool tools_optimization[] = {
-    { "pdf_compress", "PDF Compressor", "Reduce PDF file size", "application-pdf-symbolic", (const char*[]){ "compress", "pdf", NULL }, "pdf-compress", pdf_compress_create_view, NULL, NULL, pdf_compress_cmds },
+    { .id = "pdf_compress", .name = "PDF Compressor", .description = "Reduce PDF file size", .icon_name = "application-pdf-symbolic", .keywords = (const char*[]){ "compress", "pdf", NULL }, .cli_command = "pdf-compress", .create_view = pdf_compress_create_view, .commands = pdf_compress_cmds },
     { 0 }
 };
 
