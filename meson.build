@@ -147,16 +147,6 @@ foreach acc : accents
   test('accent-' + acc, accent_test, env: acc_env, suite: 'ui')
 endforeach
 
-quirc_test = executable('quirc-test',
-  'tests/test_quirc.c',
-  dependencies        : [glib_dep, gtk_dep, math_dep],
-  link_with           : utility_lib,
-  include_directories : [include_directories('src'), config_inc])
-
-test('quirc', quirc_test, env: test_env, suite: 'utility')
-if get_option('valgrind') and valgrind.found()
-  test('quirc-valgrind', valgrind, args: valgrind_args + [quirc_test], env: valgrind_env, timeout: 300, suite: ['utility', 'valgrind'])
-endif
 
 
 

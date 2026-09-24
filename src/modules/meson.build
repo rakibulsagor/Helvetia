@@ -1,16 +1,9 @@
 modules_libs = []
 
-subdir('utility')
-modules_libs += utility_lib
-
 subdir('pdf')
 subdir('image')
 modules_libs += helvetia_image_lib
-subdir('media')
-subdir('documents')
-subdir('convert')
 subdir('security')
-subdir('devtools')
 
 modules_lib = static_library('helvetia_modules',
   'builtin.c',
