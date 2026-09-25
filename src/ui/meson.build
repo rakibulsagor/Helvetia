@@ -8,7 +8,8 @@ ui_sources = files(
   'templates/template_converter.c',
   'templates/template_lookup.c',
   'templates/template_viewer.c',
-  'templates/template_calculator.c'
+  'templates/template_calculator.c',
+  'image_editor_shell.c',
 )
 
 ui_lib = static_library('helvetia_ui',

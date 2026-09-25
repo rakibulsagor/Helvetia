@@ -107,7 +107,7 @@ static void on_save_common(ToneState *st, const char *prefix) {
 
 static void on_drop_common(ToneState *st, const char *path) {
     GError *e = NULL;
-    GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
+    GdkPixbuf *pb = image_load_any(path, &e);
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
 
     g_clear_object(&st->original);
@@ -954,7 +954,7 @@ static void hist_on_mode(GObject *dd, GParamSpec *p, gpointer d) {
 static void hist_on_drop(const char *path, gpointer d) {
     HistState *st = get_hist_state(d);
     GError *e = NULL;
-    GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
+    GdkPixbuf *pb = image_load_any(path, &e);
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
     g_clear_object(&st->original);
     g_free(st->path);

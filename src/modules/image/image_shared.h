@@ -50,6 +50,9 @@ gboolean image_is_supported(const char *path);
 /* Return the lowercase extension without the dot, or NULL. */
 char *image_get_extension(const char *path);
 
+/* RAW-aware image loader */
+GdkPixbuf *image_load_any(const char *path, GError **error);
+
 /* Format a size in bytes as a human-readable string. */
 char *image_format_size(guint64 bytes);
 

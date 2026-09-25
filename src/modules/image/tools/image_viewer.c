@@ -120,7 +120,7 @@ static void load_worker(GTask *task, gpointer source_object,
     }
 
     GError *error = NULL;
-    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(ctx->path, &error);
+    GdkPixbuf *pixbuf = image_load_any(ctx->path, &error);
 
     if (!pixbuf) {
         g_task_return_error(task, error);

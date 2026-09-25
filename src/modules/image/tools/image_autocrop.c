@@ -89,7 +89,7 @@ static void ac_update(AcState *st) {
 
 static void ac_load(AcState *st, const char *path) {
     GError *e = NULL;
-    GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
+    GdkPixbuf *pb = image_load_any(path, &e);
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
     g_clear_object(&st->original);
     g_clear_object(&st->preview);

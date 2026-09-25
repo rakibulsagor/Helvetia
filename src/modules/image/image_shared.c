@@ -1,4 +1,5 @@
 #include "image_shared.h"
+#include "backend/raw_wrapper.h"
 #include <string.h>
 #include <glib/gstdio.h>
 
@@ -49,6 +50,23 @@ char *image_get_extension(const char *path) {
     const char *dot = strrchr(path, '.');
     if (!dot || dot == path) return NULL;
     return g_utf8_strdown(dot + 1, -1);
+}
+
+GdkPixbuf *image_load_any(const char *path, GError **error) {
+    char *ext = image_get_extension(path);
+    GdkPixbuf *pb = NULL;
+
+    if (ext && (g_strcmp0(ext, "cr2") == 0 || g_strcmp0(ext, "nef") == 0 ||
+                g_strcmp0(ext, "arw") == 0 || g_strcmp0(ext, "dng") == 0 ||
+                g_strcmp0(ext, "raf") == 0 || g_strcmp0(ext, "orf") == 0 ||
+                g_strcmp0(ext, "cr3") == 0 || g_strcmp0(ext, "rw2") == 0 ||
+                g_strcmp0(ext, "pef") == 0 || g_strcmp0(ext, "srw") == 0)) {
+        pb = raw_to_pixbuf(path, error);
+    } else {
+        pb = gdk_pixbuf_new_from_file(path, error);
+    }
+    g_free(ext);
+    return pb;
 }
 
 gboolean image_is_supported(const char *path) {

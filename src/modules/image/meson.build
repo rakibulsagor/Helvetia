@@ -26,9 +26,16 @@ image_sources = files(
   'tools/image_layers.c',
 )
 
+image_sources += files(
+  'backend/gegl_wrapper.c',
+  'backend/raw_wrapper.c',
+  'backend/ffmpeg_wrapper.c',
+  'tools/image_video_convert.c',
+)
+
 helvetia_image_lib = static_library('helvetia_image',
   image_sources,
-  dependencies : [glib_dep, gtk_dep, adw_dep, exif_dep],
-  include_directories : include_directories('.', '../..'),
+  dependencies : [glib_dep, gtk_dep, adw_dep, exif_dep, gegl_dep, babl_dep, libraw_dep],
+  include_directories : include_directories('.', '../..', '../../ui'),
   pic : true,
 )

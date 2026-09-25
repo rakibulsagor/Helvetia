@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../image_shared.h"
+#include "../../../ui/image_editor_shell.h"
 #include "image_draw.h"
 
 /* ================================================================== */
@@ -67,6 +68,10 @@ typedef struct {
     double     zoom;
     GtkWidget *stack, *picture, *draw_area, *overlay, *root;
     GtkWidget *undo_btn;
+    GtkWidget *cursor_lbl;
+    GtkWidget *zoom_lbl;
+    GtkWidget *info_lbl;
+    GtkWidget *right_panels;
 } DrawState;
 
 static DrawState *get_state(GtkWidget *v) {
@@ -604,9 +609,15 @@ static void on_motion(GtkEventControllerMotion *c, double sx, double sy,
                        gpointer d) {
     (void)c;
     DrawState *st = get_state(d);
-    if (!st->dragging) return;
-
     double ix, iy;
+    if (screen_to_image(st, sx, sy, &ix, &iy)) {
+        if (st->cursor_lbl) {
+            char buf[32];
+            g_snprintf(buf, sizeof buf, "%.0f, %.0f", ix, iy);
+            gtk_label_set_text(GTK_LABEL(st->cursor_lbl), buf);
+        }
+    }
+    if (!st->dragging) return;
     if (!screen_to_image(st, sx, sy, &ix, &iy)) return;
 
     if (st->tool == TOOL_BRUSH || st->tool == TOOL_ERASER) {
@@ -744,7 +755,7 @@ static void on_save_common(DrawState *st, const char *prefix) {
 static void on_drop_common(DrawState *st, const char *path) {
     st->zoom = 1.0;
     GError *e = NULL;
-    GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
+    GdkPixbuf *pb = image_load_any(path, &e);
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
     ensure_rgba(&pb);
 
@@ -758,6 +769,15 @@ static void on_drop_common(DrawState *st, const char *path) {
     st->path = g_strdup(path);
 
     gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
+
+    if (st->current && st->info_lbl) {
+        char buf[64];
+        g_snprintf(buf, sizeof buf, "%d × %d",
+                   gdk_pixbuf_get_width(st->current),
+                   gdk_pixbuf_get_height(st->current));
+        gtk_label_set_text(GTK_LABEL(st->info_lbl), buf);
+    }
+
     gtk_stack_set_visible_child_name(GTK_STACK(st->stack), "editor");
 }
 
@@ -769,6 +789,14 @@ static void on_reset_common(GtkButton *b, gpointer d) {
     g_clear_object(&st->current);
     st->current = g_object_ref(st->first_original);
     gtk_picture_set_paintable(GTK_PICTURE(st->picture), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(st->current)));
+
+    if (st->current && st->info_lbl) {
+        char buf[64];
+        g_snprintf(buf, sizeof buf, "%d × %d",
+                   gdk_pixbuf_get_width(st->current),
+                   gdk_pixbuf_get_height(st->current));
+        gtk_label_set_text(GTK_LABEL(st->info_lbl), buf);
+    }
 }
 
 static void draw_state_free(DrawState *st) {
@@ -779,87 +807,94 @@ static void draw_state_free(DrawState *st) {
     g_free(st->text_content);
     g_free(st->path);
     g_free(st);
+}static void on_color_dialog_finish(GObject *source, GAsyncResult *res, gpointer user_data) {
+    GtkColorDialog *dialog = GTK_COLOR_DIALOG(source);
+    GError *error = NULL;
+    GdkRGBA *rgba = gtk_color_dialog_choose_rgba_finish(dialog, res, &error);
+    if (rgba) {
+        DrawState *st = (DrawState *)user_data;
+        st->color_r = rgba->red;
+        st->color_g = rgba->green;
+        st->color_b = rgba->blue;
+        gdk_rgba_free(rgba);
+    }
+    if (error) g_error_free(error);
 }
 
-/* Build the shared editor shell. Returns the stack. */
-static GtkWidget *build_shell(DrawState *st, GtkWidget **out_opts,
-                                const char *hint,
-                                ImageDropCallback on_drop,
-                                GCallback on_save,
-                                GCallback on_reset,
-                                gpointer root) {
+static void on_color_btn_clicked(GtkButton *btn, gpointer user_data) {
+    DrawState *st = (DrawState *)user_data;
+    GtkColorDialog *dialog = gtk_color_dialog_new();
+    GdkRGBA initial = { st->color_r, st->color_g, st->color_b, st->opacity };
+    GtkRoot *r = gtk_widget_get_root(GTK_WIDGET(btn));
+    gtk_color_dialog_choose_rgba(dialog, GTK_WINDOW(r), &initial, NULL, on_color_dialog_finish, st);
+}
+
+static void on_tool_palette_toggled(GtkToggleButton *btn, gpointer user_data) {
+    if (!gtk_toggle_button_get_active(btn)) return;
+    DrawState *st = (DrawState *)user_data;
+    int idx = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "tool-idx"));
+    switch (idx) {
+        case 0: st->tool = TOOL_BRUSH; break;
+        case 1: st->tool = TOOL_ERASER; break;
+        case 2: st->tool = TOOL_FILL; break;
+        case 3: st->tool = TOOL_GRADIENT; break;
+        case 4: st->tool = TOOL_TEXT; break;
+        case 5: st->tool = TOOL_SHAPE; break;
+        case 6: st->tool = TOOL_ARROW; break;
+        default: break;
+    }
+}
+
+/* Builds the Photoshop-style editor shell. Returns the stack. */
+static GtkWidget *build_editor_shell(DrawState *st,
+                                       const char *hint,
+                                       ImageDropCallback on_drop,
+                                       GCallback on_save,
+                                       GCallback on_reset,
+                                       gpointer root) {
     GtkWidget *stack = gtk_stack_new();
-    gtk_stack_set_transition_type(GTK_STACK(stack),
-                                  GTK_STACK_TRANSITION_TYPE_CROSSFADE);
-    gtk_widget_set_vexpand(stack, TRUE);
     st->stack = stack;
 
+    /* Drop page unchanged */
     GtkWidget *drop_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_margin_start(drop_box, 24);
-    gtk_widget_set_margin_end(drop_box, 24);
-    gtk_widget_set_margin_top(drop_box, 24);
-    gtk_widget_set_margin_bottom(drop_box, 24);
     gtk_widget_set_vexpand(drop_box, TRUE);
     gtk_box_append(GTK_BOX(drop_box),
         image_build_drop_zone(hint, on_drop, root));
     gtk_stack_add_named(GTK_STACK(stack), drop_box, "drop");
 
-    GtkWidget *editor = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    /* Editor page — Photoshop layout */
+    ImageEditorSlots slots;
+    GtkWidget *shell = image_editor_shell_new(&slots);
+    st->right_panels = slots.right_panels;
 
-    GtkWidget *opts = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-    gtk_widget_set_margin_start(opts, 12);
-    gtk_widget_set_margin_end(opts, 12);
-    gtk_widget_set_margin_top(opts, 8);
-    gtk_widget_set_margin_bottom(opts, 8);
-    *out_opts = opts;
+    /* Left: tool buttons — one per drawing tool */
+    GtkWidget *group = NULL;
+    const char *tools[] = {
+        "draw-brush-symbolic", "draw-eraser-symbolic",
+        "color-fill-symbolic", "color-gradient-symbolic",
+        "insert-text-symbolic", "insert-object-symbolic",
+        "draw-arrow-symbolic", "draw-smudge-symbolic",
+        "weather-clear-symbolic", "weather-clear-night-symbolic"
+    };
+    for (int i = 0; i < 10; i++) {
+        GtkWidget *btn = gtk_toggle_button_new();
+        GtkWidget *img = gtk_image_new_from_icon_name(tools[i]);
+        gtk_button_set_child(GTK_BUTTON(btn), img);
+        g_object_set_data(G_OBJECT(btn), "tool-idx", GINT_TO_POINTER(i));
+        g_signal_connect(btn, "toggled", G_CALLBACK(on_tool_palette_toggled), st);
+        if (i == 0) group = btn;
+        else gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(btn),
+                                          GTK_TOGGLE_BUTTON(group));
+        if (i == (int)st->tool) {
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(btn), TRUE);
+        }
+        gtk_box_append(GTK_BOX(slots.left_palette), btn);
+    }
 
-    GtkWidget *bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_set_margin_start(bar, 12);
-    gtk_widget_set_margin_end(bar, 12);
-    gtk_widget_set_margin_bottom(bar, 8);
-
-    st->undo_btn = image_undo_button(G_CALLBACK(on_undo), root);
-    gtk_widget_set_sensitive(st->undo_btn, FALSE);
-
-    GtkWidget *reset = image_reset_button(on_reset, root);
-    GtkWidget *new_img = image_new_image_button(on_drop, root);
-
-    GtkWidget *sp = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_hexpand(sp, TRUE);
-
-    GtkWidget *save = gtk_button_new_with_label("Save As…");
-    gtk_widget_add_css_class(save, "flat");
-    if (on_save) g_signal_connect(save, "clicked", on_save, root);
-
-    gtk_box_append(GTK_BOX(bar), new_img);
-    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
-    gtk_box_append(GTK_BOX(bar), st->undo_btn);
-    gtk_box_append(GTK_BOX(bar), reset);
-
-    gtk_box_append(GTK_BOX(bar), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
-    GtkWidget *z_out = gtk_button_new_from_icon_name("zoom-out-symbolic");
-    GtkWidget *z_in = gtk_button_new_from_icon_name("zoom-in-symbolic");
-    GtkWidget *z_1 = gtk_button_new_from_icon_name("zoom-original-symbolic");
-    gtk_widget_add_css_class(z_out, "flat");
-    gtk_widget_add_css_class(z_in, "flat");
-    gtk_widget_add_css_class(z_1, "flat");
-    g_signal_connect_swapped(z_out, "clicked", G_CALLBACK(image_zoom_out), root);
-    g_signal_connect_swapped(z_in, "clicked", G_CALLBACK(image_zoom_in), root);
-    g_signal_connect_swapped(z_1, "clicked", G_CALLBACK(image_zoom_reset), root);
-    gtk_box_append(GTK_BOX(bar), z_out);
-    gtk_box_append(GTK_BOX(bar), z_1);
-    gtk_box_append(GTK_BOX(bar), z_in);
-
-    gtk_box_append(GTK_BOX(bar), sp);
-    gtk_box_append(GTK_BOX(bar), save);
-
-    /* Canvas: picture + overlay drawing area */
+    /* Center: canvas (picture + overlay draw area) */
     GtkWidget *pic = gtk_picture_new();
     gtk_picture_set_can_shrink(GTK_PICTURE(pic), TRUE);
     gtk_picture_set_content_fit(GTK_PICTURE(pic), GTK_CONTENT_FIT_CONTAIN);
-    gtk_widget_set_vexpand(pic, TRUE);
-    gtk_widget_set_hexpand(pic, TRUE);
-    gtk_widget_add_css_class(pic, "image-viewer-canvas");
     st->picture = pic;
 
     GtkWidget *draw = gtk_drawing_area_new();
@@ -867,15 +902,12 @@ static GtkWidget *build_shell(DrawState *st, GtkWidget **out_opts,
     gtk_widget_set_vexpand(draw, TRUE);
     st->draw_area = draw;
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(draw),
-                                    preview_draw, st, NULL);
+                                     preview_draw, st, NULL);
 
-    GtkWidget *overlay = gtk_overlay_new();
-    gtk_overlay_set_child(GTK_OVERLAY(overlay), pic);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), draw);
-    gtk_widget_set_vexpand(overlay, TRUE);
-    st->overlay = overlay;
+    gtk_overlay_set_child(GTK_OVERLAY(slots.center_canvas), pic);
+    gtk_overlay_add_overlay(GTK_OVERLAY(slots.center_canvas), draw);
 
-    /* Gestures */
+    /* Wire gestures (unchanged) */
     GtkGesture *click = gtk_gesture_click_new();
     g_signal_connect(click, "pressed", G_CALLBACK(on_press), root);
     g_signal_connect(click, "released", G_CALLBACK(on_release), root);
@@ -885,14 +917,68 @@ static GtkWidget *build_shell(DrawState *st, GtkWidget **out_opts,
     g_signal_connect(motion, "motion", G_CALLBACK(on_motion), root);
     gtk_widget_add_controller(draw, motion);
 
-    gtk_box_append(GTK_BOX(editor), opts);
-    gtk_box_append(GTK_BOX(editor), bar);
-    gtk_box_append(GTK_BOX(editor),
-                   gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
-    gtk_box_append(GTK_BOX(editor), overlay);
-    gtk_stack_add_named(GTK_STACK(stack), editor, "editor");
-    gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
+    /* Right: properties panel — color, size, opacity */
+    GtkWidget *props_header = gtk_label_new("Properties");
+    gtk_widget_add_css_class(props_header, "category-title");
+    gtk_label_set_xalign(GTK_LABEL(props_header), 0.0f);
+    gtk_box_append(GTK_BOX(slots.right_panels), props_header);
 
+    GtkWidget *color_btn = gtk_button_new_with_label("Color");
+    g_signal_connect(color_btn, "clicked", G_CALLBACK(on_color_btn_clicked), st);
+    gtk_box_append(GTK_BOX(slots.right_panels), color_btn);
+
+    GtkWidget *size_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget *size_lbl = gtk_label_new("Size");
+    GtkWidget *size_scale = gtk_scale_new_with_range(
+        GTK_ORIENTATION_HORIZONTAL, 1, 200, 1);
+    gtk_widget_set_hexpand(size_scale, TRUE);
+    gtk_range_set_value(GTK_RANGE(size_scale), st->size > 0 ? st->size : 10);
+    g_signal_connect(size_scale, "value-changed",
+                     G_CALLBACK(on_size), root);
+    gtk_box_append(GTK_BOX(size_row), size_lbl);
+    gtk_box_append(GTK_BOX(size_row), size_scale);
+    gtk_box_append(GTK_BOX(slots.right_panels), size_row);
+
+    GtkWidget *opacity_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget *op_lbl = gtk_label_new("Opacity");
+    GtkWidget *op_scale = gtk_scale_new_with_range(
+        GTK_ORIENTATION_HORIZONTAL, 1, 100, 1);
+    gtk_widget_set_hexpand(op_scale, TRUE);
+    gtk_range_set_value(GTK_RANGE(op_scale), st->opacity > 0 ? st->opacity * 100 : 100);
+    g_signal_connect(op_scale, "value-changed",
+                     G_CALLBACK(on_opacity), root);
+    gtk_box_append(GTK_BOX(opacity_row), op_lbl);
+    gtk_box_append(GTK_BOX(opacity_row), op_scale);
+    gtk_box_append(GTK_BOX(slots.right_panels), opacity_row);
+
+    /* Bottom bar: cursor position, zoom, image info */
+    st->cursor_lbl = gtk_label_new("0, 0");
+    st->zoom_lbl = gtk_label_new("100%");
+    GtkWidget *info_lbl = gtk_label_new("— × —");
+    st->info_lbl = info_lbl;
+
+    GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(spacer, TRUE);
+
+    gtk_box_append(GTK_BOX(slots.bottom_bar), st->cursor_lbl);
+    gtk_box_append(GTK_BOX(slots.bottom_bar), spacer);
+    gtk_box_append(GTK_BOX(slots.bottom_bar), info_lbl);
+    gtk_box_append(GTK_BOX(slots.bottom_bar), st->zoom_lbl);
+
+    /* Action bar at bottom of right panel */
+    GtkWidget *actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    st->undo_btn = image_undo_button(G_CALLBACK(on_undo), root);
+    gtk_widget_set_sensitive(st->undo_btn, FALSE);
+    GtkWidget *reset_btn = image_reset_button(on_reset, root);
+    GtkWidget *save_btn = gtk_button_new_with_label("Save As…");
+    if (on_save) g_signal_connect(save_btn, "clicked", on_save, root);
+    gtk_box_append(GTK_BOX(actions), st->undo_btn);
+    gtk_box_append(GTK_BOX(actions), reset_btn);
+    gtk_box_append(GTK_BOX(actions), save_btn);
+    gtk_box_append(GTK_BOX(slots.right_panels), actions);
+
+    gtk_stack_add_named(GTK_STACK(stack), shell, "editor");
+    gtk_stack_set_visible_child_name(GTK_STACK(stack), "drop");
     return stack;
 }
 
@@ -941,27 +1027,16 @@ GtkWidget *image_brush_create(void) {
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
 
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    br_drop, G_CALLBACK(br_save),
-                                    G_CALLBACK(br_reset), root);
-
-    GtkWidget *l1, *l2;
-    gtk_box_append(GTK_BOX(opts),
-        make_color_button("Color", &st->color_r, &st->color_g, &st->color_b, st));
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Size", 1, 200, 1, 10, &l1, G_CALLBACK(on_size), root));
-    gtk_label_set_text(GTK_LABEL(l1), "10");
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Opacity %", 1, 100, 1, 100, &l2, G_CALLBACK(on_opacity), root));
-    gtk_label_set_text(GTK_LABEL(l2), "100");
+    GtkWidget *stack = build_editor_shell(st, "Image file",
+                                          br_drop, G_CALLBACK(br_save),
+                                          G_CALLBACK(br_reset), root);
 
     GtkWidget *hint = gtk_label_new("Click and drag to paint. Round-cap strokes for smooth lines.");
     gtk_label_set_wrap(GTK_LABEL(hint), TRUE);
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_widget_add_css_class(hint, "caption");
     gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
+    gtk_box_append(GTK_BOX(st->right_panels), hint);
 
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
@@ -1008,10 +1083,9 @@ GtkWidget *image_eraser_create(void) {
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
 
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    er_drop, G_CALLBACK(er_save),
-                                    G_CALLBACK(er_reset), root);
+    GtkWidget *stack = build_editor_shell(st, "Image file",
+                                          er_drop, G_CALLBACK(er_save),
+                                          G_CALLBACK(er_reset), root);
 
     GtkWidget *mode_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *ml = gtk_label_new("Mode:");
@@ -1023,12 +1097,7 @@ GtkWidget *image_eraser_create(void) {
     gtk_drop_down_set_selected(GTK_DROP_DOWN(mode_dd), 0);
     gtk_box_append(GTK_BOX(mode_row), ml);
     gtk_box_append(GTK_BOX(mode_row), mode_dd);
-    gtk_box_append(GTK_BOX(opts), mode_row);
-
-    GtkWidget *l1;
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Size", 1, 200, 1, 20, &l1, G_CALLBACK(on_size), root));
-    gtk_label_set_text(GTK_LABEL(l1), "20");
+    gtk_box_append(GTK_BOX(st->right_panels), mode_row);
 
     g_signal_connect(mode_dd, "notify::selected",
                      G_CALLBACK(er_on_mode), root);
@@ -1040,7 +1109,7 @@ GtkWidget *image_eraser_create(void) {
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_widget_add_css_class(hint, "caption");
     gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
+    gtk_box_append(GTK_BOX(st->right_panels), hint);
 
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
@@ -1087,20 +1156,14 @@ GtkWidget *image_fill_create(void) {
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
 
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    fl_drop, G_CALLBACK(fl_save),
-                                    G_CALLBACK(fl_reset), root);
+    GtkWidget *stack = build_editor_shell(st, "Image file",
+                                          fl_drop, G_CALLBACK(fl_save),
+                                          G_CALLBACK(fl_reset), root);
 
-    GtkWidget *l1, *l2;
-    gtk_box_append(GTK_BOX(opts),
-        make_color_button("Fill color", &st->color_r, &st->color_g, &st->color_b, st));
-    gtk_box_append(GTK_BOX(opts),
+    GtkWidget *l1;
+    gtk_box_append(GTK_BOX(st->right_panels),
         make_slider("Tolerance", 0, 255, 1, 30, &l1, G_CALLBACK(fl_on_tol), root));
     gtk_label_set_text(GTK_LABEL(l1), "30");
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Opacity %", 1, 100, 1, 100, &l2, G_CALLBACK(on_opacity), root));
-    gtk_label_set_text(GTK_LABEL(l2), "100");
 
     GtkWidget *hint = gtk_label_new(
         "Click a region to flood-fill with the chosen color. "
@@ -1109,7 +1172,7 @@ GtkWidget *image_fill_create(void) {
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_widget_add_css_class(hint, "caption");
     gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
+    gtk_box_append(GTK_BOX(st->right_panels), hint);
 
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
@@ -1157,10 +1220,9 @@ GtkWidget *image_gradient_create(void) {
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
 
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    gr_drop, G_CALLBACK(gr_save),
-                                    G_CALLBACK(gr_reset), root);
+    GtkWidget *stack = build_editor_shell(st, "Image file",
+                                          gr_drop, G_CALLBACK(gr_save),
+                                          G_CALLBACK(gr_reset), root);
 
     GtkWidget *type_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *tl = gtk_label_new("Type:");
@@ -1172,17 +1234,10 @@ GtkWidget *image_gradient_create(void) {
     gtk_drop_down_set_selected(GTK_DROP_DOWN(type_dd), 0);
     gtk_box_append(GTK_BOX(type_row), tl);
     gtk_box_append(GTK_BOX(type_row), type_dd);
-    gtk_box_append(GTK_BOX(opts), type_row);
+    gtk_box_append(GTK_BOX(st->right_panels), type_row);
 
-    gtk_box_append(GTK_BOX(opts),
-        make_color_button("Color 1", &st->color_r, &st->color_g, &st->color_b, st));
-    gtk_box_append(GTK_BOX(opts),
+    gtk_box_append(GTK_BOX(st->right_panels),
         make_color_button("Color 2", &st->grad_r2, &st->grad_g2, &st->grad_b2, st));
-
-    GtkWidget *l;
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Opacity %", 1, 100, 1, 100, &l, G_CALLBACK(on_opacity), root));
-    gtk_label_set_text(GTK_LABEL(l), "100");
 
     g_signal_connect(type_dd, "notify::selected",
                      G_CALLBACK(gr_on_type), root);
@@ -1195,7 +1250,7 @@ GtkWidget *image_gradient_create(void) {
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_widget_add_css_class(hint, "caption");
     gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
+    gtk_box_append(GTK_BOX(st->right_panels), hint);
 
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
@@ -1254,10 +1309,9 @@ GtkWidget *image_text_create(void) {
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
 
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    tx_drop, G_CALLBACK(tx_save),
-                                    G_CALLBACK(tx_reset), root);
+    GtkWidget *stack = build_editor_shell(st, "Image file",
+                                          tx_drop, G_CALLBACK(tx_save),
+                                          G_CALLBACK(tx_reset), root);
 
     GtkWidget *text_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *tl = gtk_label_new("Text:");
@@ -1269,7 +1323,7 @@ GtkWidget *image_text_create(void) {
     gtk_widget_set_hexpand(entry, TRUE);
     gtk_box_append(GTK_BOX(text_row), tl);
     gtk_box_append(GTK_BOX(text_row), entry);
-    gtk_box_append(GTK_BOX(opts), text_row);
+    gtk_box_append(GTK_BOX(st->right_panels), text_row);
 
     GtkWidget *style_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *sl = gtk_label_new("Style:");
@@ -1281,24 +1335,18 @@ GtkWidget *image_text_create(void) {
     gtk_drop_down_set_selected(GTK_DROP_DOWN(style_dd), 0);
     gtk_box_append(GTK_BOX(style_row), sl);
     gtk_box_append(GTK_BOX(style_row), style_dd);
-    gtk_box_append(GTK_BOX(opts), style_row);
+    gtk_box_append(GTK_BOX(st->right_panels), style_row);
 
     GtkWidget *commit_btn = gtk_button_new_with_label("Apply Text to Image");
     gtk_widget_add_css_class(commit_btn, "suggested-action");
     g_signal_connect_swapped(commit_btn, "clicked",
         G_CALLBACK(commit_current_text), st);
-    gtk_box_append(GTK_BOX(opts), commit_btn);
+    gtk_box_append(GTK_BOX(st->right_panels), commit_btn);
 
-    gtk_box_append(GTK_BOX(opts),
-        make_color_button("Color", &st->color_r, &st->color_g, &st->color_b, st));
-
-    GtkWidget *l1, *l2;
-    gtk_box_append(GTK_BOX(opts),
+    GtkWidget *l1;
+    gtk_box_append(GTK_BOX(st->right_panels),
         make_slider("Font size", 8, 200, 1, 32, &l1, G_CALLBACK(tx_on_font_size), root));
     gtk_label_set_text(GTK_LABEL(l1), "32");
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Opacity %", 1, 100, 1, 100, &l2, G_CALLBACK(on_opacity), root));
-    gtk_label_set_text(GTK_LABEL(l2), "100");
 
     g_signal_connect(entry, "changed", G_CALLBACK(tx_on_text), root);
     g_signal_connect(style_dd, "notify::selected", G_CALLBACK(tx_on_style), root);
@@ -1310,7 +1358,7 @@ GtkWidget *image_text_create(void) {
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_widget_add_css_class(hint, "caption");
     gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
+    gtk_box_append(GTK_BOX(st->right_panels), hint);
 
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
@@ -1365,10 +1413,9 @@ GtkWidget *image_shape_create(void) {
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
 
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    sp_drop, G_CALLBACK(sp_save),
-                                    G_CALLBACK(sp_reset), root);
+    GtkWidget *stack = build_editor_shell(st, "Image file",
+                                          sp_drop, G_CALLBACK(sp_save),
+                                          G_CALLBACK(sp_reset), root);
 
     GtkWidget *type_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget *tl = gtk_label_new("Shape:");
@@ -1380,18 +1427,7 @@ GtkWidget *image_shape_create(void) {
     gtk_drop_down_set_selected(GTK_DROP_DOWN(type_dd), 0);
     gtk_box_append(GTK_BOX(type_row), tl);
     gtk_box_append(GTK_BOX(type_row), type_dd);
-    gtk_box_append(GTK_BOX(opts), type_row);
-
-    gtk_box_append(GTK_BOX(opts),
-        make_color_button("Color", &st->color_r, &st->color_g, &st->color_b, st));
-
-    GtkWidget *l1, *l2;
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Line width", 1, 40, 1, 4, &l1, G_CALLBACK(on_size), root));
-    gtk_label_set_text(GTK_LABEL(l1), "4");
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Opacity %", 1, 100, 1, 100, &l2, G_CALLBACK(on_opacity), root));
-    gtk_label_set_text(GTK_LABEL(l2), "100");
+    gtk_box_append(GTK_BOX(st->right_panels), type_row);
 
     /* Filled toggle */
     GtkWidget *fill_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -1403,7 +1439,7 @@ GtkWidget *image_shape_create(void) {
     gtk_widget_set_valign(fill_sw, GTK_ALIGN_CENTER);
     gtk_box_append(GTK_BOX(fill_row), fl);
     gtk_box_append(GTK_BOX(fill_row), fill_sw);
-    gtk_box_append(GTK_BOX(opts), fill_row);
+    gtk_box_append(GTK_BOX(st->right_panels), fill_row);
 
     g_signal_connect(type_dd, "notify::selected",
                      G_CALLBACK(sp_on_type), root);
@@ -1417,7 +1453,7 @@ GtkWidget *image_shape_create(void) {
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_widget_add_css_class(hint, "caption");
     gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
+    gtk_box_append(GTK_BOX(st->right_panels), hint);
 
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,
@@ -1459,21 +1495,9 @@ GtkWidget *image_arrow_create(void) {
     gtk_widget_set_vexpand(root, TRUE);
     st->root = root;
 
-    GtkWidget *opts;
-    GtkWidget *stack = build_shell(st, &opts, "Image file",
-                                    ar_drop, G_CALLBACK(ar_save),
-                                    G_CALLBACK(ar_reset), root);
-
-    gtk_box_append(GTK_BOX(opts),
-        make_color_button("Color", &st->color_r, &st->color_g, &st->color_b, st));
-
-    GtkWidget *l1, *l2;
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Line width", 1, 40, 1, 4, &l1, G_CALLBACK(on_size), root));
-    gtk_label_set_text(GTK_LABEL(l1), "4");
-    gtk_box_append(GTK_BOX(opts),
-        make_slider("Opacity %", 1, 100, 1, 100, &l2, G_CALLBACK(on_opacity), root));
-    gtk_label_set_text(GTK_LABEL(l2), "100");
+    GtkWidget *stack = build_editor_shell(st, "Image file",
+                                          ar_drop, G_CALLBACK(ar_save),
+                                          G_CALLBACK(ar_reset), root);
 
     GtkWidget *hint = gtk_label_new(
         "Click and drag to draw an arrow. "
@@ -1482,7 +1506,7 @@ GtkWidget *image_arrow_create(void) {
     gtk_widget_add_css_class(hint, "dim-label");
     gtk_widget_add_css_class(hint, "caption");
     gtk_label_set_xalign(GTK_LABEL(hint), 0.0f);
-    gtk_box_append(GTK_BOX(opts), hint);
+    gtk_box_append(GTK_BOX(st->right_panels), hint);
 
     gtk_box_append(GTK_BOX(root), stack);
     g_object_set_data_full(G_OBJECT(root), "draw-state", st,

@@ -180,7 +180,7 @@ static void append_file_section(MetadataState *st, const char *path) {
 
 static void append_image_section(MetadataState *st, const char *path) {
     GError *e = NULL;
-    GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
+    GdkPixbuf *pb = image_load_any(path, &e);
     if (!pb) {
         if (e) g_error_free(e);
         return;

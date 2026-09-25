@@ -163,7 +163,7 @@ static void save_persp(GtkButton *b, gpointer d) {
 static void on_drop(const char *path, gpointer d) {
     PerspState *st = get_state(d);
     GError *e = NULL;
-    GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
+    GdkPixbuf *pb = image_load_any(path, &e);
     if (!pb) { image_show_error(st->root, e->message); g_error_free(e); return; }
 
     g_clear_object(&st->original);

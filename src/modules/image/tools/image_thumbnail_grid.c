@@ -38,7 +38,7 @@ static void on_thumb(GtkButton *btn, gpointer d) {
     if (!path) return;
 
     GError *e = NULL;
-    GdkPixbuf *pb = gdk_pixbuf_new_from_file(path, &e);
+    GdkPixbuf *pb = image_load_any(path, &e);
     if (!pb) { image_show_error(view, e->message); g_error_free(e); return; }
     gtk_picture_set_paintable(GTK_PICTURE(st->full_pic), GDK_PAINTABLE(gdk_texture_new_for_pixbuf(pb)));
     gtk_picture_set_content_fit(GTK_PICTURE(st->full_pic), GTK_CONTENT_FIT_CONTAIN);

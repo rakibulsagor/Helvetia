@@ -12,6 +12,9 @@ helvetia_pkg_deps = [
   glib_dep,
   gmodule_dep,
   math_dep,
+  gegl_dep,
+  babl_dep,
+  libraw_dep,
 ]
 
 executable('helvetia',

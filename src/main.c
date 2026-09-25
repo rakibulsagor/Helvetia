@@ -9,6 +9,7 @@
 #include "core/plugin_loader.h"
 #include "core/tool_registry.h"
 #include "ui/window.h"
+#include "modules/image/backend/gegl_wrapper.h"
 #include <adwaita.h>
 #include <gtk/gtk.h>
 
@@ -55,6 +56,9 @@ static void on_activate(AdwApplication *app, gpointer user_data) {
 }
 
 int main(int argc, char **argv) {
+  /* 0. Initialise GEGL */
+  helvetia_gegl_init();
+
   /* 1. Initialise registries FIRST */
   helvetia_module_registry_init();
   helvetia_tool_registry_init();
